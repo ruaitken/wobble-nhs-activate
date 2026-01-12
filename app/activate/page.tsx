@@ -1,11 +1,14 @@
 "use client";
 
+// Vercel can try to prerender App Router pages at build time.
+// This page depends on browser-only auth + Supabase, so we force it to be dynamic
+// and disable caching/revalidation to avoid build-time evaluation crashes.
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabaseBrowserClient } from "@/lib/supabaseClient";
 import { Montserrat } from "next/font/google";
 import Image from "next/image";
 
@@ -82,6 +85,11 @@ export default function ActivatePage() {
       setResult("Please enter your email and password.");
       return;
     }
+
+    // IMPORTANT: Create Supabase lazily and only in the browser.
+    // Even though this is a Client Component, Next can still evaluate modules during
+    // build/prerender. Avoiding a module-level Supabase singleton prevents Vercel build crashes.
+    const supabase = getSupabaseBrowserClient();
 
     setSubmitting(true);
     setResult(null);
