@@ -22,6 +22,12 @@ type ApiResponse =
     }
   | { ok: false; reason: string; error?: string };
 
+const APP_STORE_URL = "https://apps.apple.com/gb/app/wobble-strength-balance/id6749583215";
+const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=com.wobblebalance.app";
+
+type ActivationStatus = "idle" | "error" | "success";
+type ActivationResult = { title: string; message: string } | null;
+
 export default function ActivateClient({ fontClassName }: { fontClassName: string }) {
   const searchParams = useSearchParams();
   const campaignId = searchParams.get("campaign_id");
@@ -33,7 +39,8 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
   const [password, setPassword] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
+  const [activationStatus, setActivationStatus] = useState<ActivationStatus>("idle");
+  const [result, setResult] = useState<ActivationResult>(null);
 
   // -----------------------------
   // 1) Validate campaign link
@@ -52,8 +59,9 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
         );
         const json = (await res.json()) as ApiResponse;
         setData(json);
-      } catch (e: any) {
-        setData({ ok: false, reason: "network_error", error: e?.message });
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        setData({ ok: false, reason: "network_error", error: message });
       } finally {
         setLoading(false);
       }
@@ -70,7 +78,8 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !password) {
-      setResult("Please enter your email and password.");
+      setActivationStatus("error");
+      setResult({ title: "Check your details", message: "Please enter your email and password." });
       return;
     }
 
@@ -80,11 +89,12 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
     const supabase = getSupabaseBrowserClient();
 
     setSubmitting(true);
+    setActivationStatus("idle");
     setResult(null);
 
     try {
       // A) Try sign in
-      let { data: authData, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
       });
@@ -106,9 +116,12 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
       const accessToken = sessionData.session?.access_token;
 
       if (!accessToken) {
-        setResult(
-          "Signed in, but no session token found. If email confirmation is enabled, please confirm your email then try again."
-        );
+        setActivationStatus("error");
+        setResult({
+          title: "Signed in, but you need to confirm email",
+          message:
+            "No session token was found. If email confirmation is enabled, please confirm your email then try again.",
+        });
         return;
       }
 
@@ -125,21 +138,31 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
       const json = await res.json();
 
       if (!res.ok) {
-        setResult(
-          `Activation failed: ${json.error || json.reason || "Unknown error"}`
-        );
+        setActivationStatus("error");
+        setResult({
+          title: "Activation failed",
+          message: String(json.error || json.reason || "Unknown error"),
+        });
         return;
       }
 
       setPassword("");
-      setResult("Activation successful. You can now use the Wobble app.");
+      setActivationStatus("success");
+      setResult({
+        title: "Account activated — you now have access to Wobble.",
+        message:
+          "Please download the app and complete onboarding and the assessment. Your journey to building better balance and strength begins now.",
+      });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      setResult(`Something went wrong: ${msg}`);
+      setActivationStatus("error");
+      setResult({ title: "Something went wrong", message: msg });
     } finally {
       setSubmitting(false);
     }
   }
+
+  const isSuccess = activationStatus === "success";
 
   return (
     <main className={[fontClassName, "min-h-screen bg-[#A6D5CE] text-[#25303B]"].join(" ")}>
@@ -155,7 +178,7 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
                 NHS Activation
               </h1>
               <p className="mt-2 max-w-prose text-sm text-[#25303B]/80 sm:text-base">
-                We’ll verify your link, sign you in, and activate access.
+                We’ll verify your link, sign you up, and activate access.
               </p>
             </div>
 
@@ -246,6 +269,7 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
                       inputMode="email"
                       autoComplete="email"
                       placeholder="you@nhs.uk"
+                      disabled={submitting || isSuccess}
                       className="mt-2 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-base shadow-sm placeholder:text-[#25303B]/40 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#A6D5CE]"
                     />
                   </div>
@@ -257,6 +281,7 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
                       type="password"
                       autoComplete="current-password"
                       placeholder="Password"
+                      disabled={submitting || isSuccess}
                       className="mt-2 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-base shadow-sm placeholder:text-[#25303B]/40 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#A6D5CE]"
                     />
                   </div>
@@ -265,7 +290,7 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <button
                     onClick={handleContinue}
-                    disabled={submitting}
+                    disabled={submitting || isSuccess}
                     className="inline-flex w-full items-center justify-center rounded-xl bg-[#25303B] px-5 py-3 text-sm font-extrabold text-[#F9F5EF] shadow-sm transition hover:bg-[#25303B]/90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                   >
                     {submitting ? "Activating…" : "Continue"}
@@ -279,15 +304,50 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
                   <div
                     className={[
                       "rounded-xl border p-4",
-                      result.toLowerCase().includes("successful")
+                      activationStatus === "success"
                         ? "border-[#E7B450]/50 bg-[#E7B450]/15"
                         : "border-[#E58B66]/40 bg-[#E58B66]/10",
                     ].join(" ")}
                     role="status"
                     aria-live="polite"
                   >
-                    <div className="text-sm font-extrabold">Status</div>
-                    <div className="mt-1 text-sm text-[#25303B]/80">{result}</div>
+                    <div className="text-sm font-extrabold">{result.title}</div>
+                    <div className="mt-1 text-sm text-[#25303B]/80">{result.message}</div>
+
+                    {activationStatus === "success" && (
+                      <div className="mt-4">
+                        <ol className="list-decimal space-y-3 pl-5 text-sm text-[#25303B]/85">
+                          <li>
+                            <div className="font-semibold text-[#25303B]">Download Wobble</div>
+                            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                              <a
+                                href={APP_STORE_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center rounded-xl bg-[#25303B] px-4 py-2 text-sm font-extrabold text-[#F9F5EF] shadow-sm transition hover:bg-[#25303B]/90"
+                              >
+                                Download on the App Store
+                              </a>
+                              <a
+                                href={GOOGLE_PLAY_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white/60 px-4 py-2 text-sm font-extrabold text-[#25303B] shadow-sm transition hover:bg-white/80"
+                              >
+                                Get it on Google Play
+                              </a>
+                            </div>
+                          </li>
+                          <li>
+                            <div className="font-semibold text-[#25303B]">Sign in</div>
+                            <div className="mt-1">Use the same email and password you entered here.</div>
+                          </li>
+                          <li>
+                            <div className="font-semibold text-[#25303B]">Complete onboarding &amp; assessment</div>
+                          </li>
+                        </ol>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

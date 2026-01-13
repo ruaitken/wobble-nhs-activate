@@ -40,9 +40,10 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json({ ok: true, campaign });
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
     return NextResponse.json(
-      { ok: false, reason: "unexpected_error", error: e?.message ?? String(e) },
+      { ok: false, reason: "unexpected_error", error: message },
       { status: 500 }
     );
   }
