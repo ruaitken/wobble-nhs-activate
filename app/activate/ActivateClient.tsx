@@ -268,7 +268,7 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
                       type="email"
                       inputMode="email"
                       autoComplete="email"
-                      placeholder="you@nhs.uk"
+                      placeholder="example@email.com"
                       disabled={submitting || isSuccess}
                       className="mt-2 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-base shadow-sm placeholder:text-[#25303B]/40 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#A6D5CE]"
                     />
