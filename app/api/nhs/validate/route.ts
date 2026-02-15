@@ -20,7 +20,7 @@ export async function GET(req: Request) {
     const { data: campaign, error } = await supabaseServer
       .from("nhs_campaigns")
       .select(
-        "id, trust_name, service_name, seat_limit, seats_used, is_active, starts_at, claim_deadline_at, claim_duration_days"
+        "id, campaign_type, trust_name, service_name, seat_limit, seats_used, is_active, starts_at, claim_deadline_at, claim_duration_days"
       )
       .eq("id", campaignId)
       .maybeSingle();

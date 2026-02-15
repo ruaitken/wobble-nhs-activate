@@ -10,6 +10,7 @@ type ApiResponse =
       ok: true;
       campaign: {
         id: string;
+        campaign_type: "nhs" | "private" | null;
         trust_name: string | null;
         service_name: string | null;
         seat_limit: number | string | null;
@@ -163,6 +164,13 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
   }
 
   const isSuccess = activationStatus === "success";
+  const campaignType = data?.ok === true ? (data.campaign.campaign_type ?? "nhs") : "nhs";
+  const headerPillLabel = campaignType === "nhs" ? "Wobble NHS access" : "Wobble app access";
+  const pageTitle = campaignType === "nhs" ? "NHS Activation" : "Wobble Activation";
+  const footerHelpText =
+    campaignType === "nhs"
+      ? "Trouble signing in? Double-check your email and password, or contact your NHS service team."
+      : "Trouble signing in? Double-check your email and password, or contact your service team.";
 
   return (
     <main className={[fontClassName, "min-h-screen bg-[#A6D5CE] text-[#25303B]"].join(" ")}>
@@ -172,10 +180,10 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-[#F9F5EF]/70 px-3 py-1 text-xs font-semibold tracking-wide ring-1 ring-black/5">
                 <span className="h-2 w-2 rounded-full bg-[#E58B66]" />
-                Wobble NHS access
+                {headerPillLabel}
               </div>
               <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
-                NHS Activation
+                {pageTitle}
               </h1>
               <p className="mt-2 max-w-prose text-sm text-[#25303B]/80 sm:text-base">
                 We’ll verify your link, sign you up, and activate access.
@@ -356,8 +364,7 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
         </section>
 
         <footer className="mt-5 text-xs text-[#25303B]/70">
-          Trouble signing in? Double-check your email and password, or contact your NHS
-          service team.
+          {footerHelpText}
         </footer>
       </div>
     </main>
