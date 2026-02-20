@@ -38,6 +38,7 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
   const [activationStatus, setActivationStatus] = useState<ActivationStatus>("idle");
@@ -78,9 +79,30 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
     if (!campaignId || !data || data.ok !== true) return;
 
     const trimmedEmail = email.trim();
-    if (!trimmedEmail || !password) {
+    if (!trimmedEmail || !password || !confirmPassword) {
       setActivationStatus("error");
-      setResult({ title: "Check your details", message: "Please enter your email and password." });
+      setResult({
+        title: "Check your details",
+        message: "Please enter your email, password, and re-enter your password.",
+      });
+      return;
+    }
+
+    if (password.length < 8) {
+      setActivationStatus("error");
+      setResult({
+        title: "Password too short",
+        message: "Your password must be at least 8 characters.",
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setActivationStatus("error");
+      setResult({
+        title: "Passwords do not match",
+        message: "Please make sure both password fields match.",
+      });
       return;
     }
 
@@ -148,6 +170,7 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
       }
 
       setPassword("");
+      setConfirmPassword("");
       setActivationStatus("success");
       setResult({
         title: "Account activated — you now have access to Wobble.",
@@ -290,6 +313,23 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
                       autoComplete="current-password"
                       placeholder="Password"
                       disabled={submitting || isSuccess}
+                      minLength={8}
+                      className="mt-2 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-base shadow-sm placeholder:text-[#25303B]/40 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#A6D5CE]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="sm:col-start-2">
+                    <label className="text-sm font-semibold">Re-enter password</label>
+                    <input
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      type="password"
+                      autoComplete="current-password"
+                      placeholder="Re-enter password"
+                      disabled={submitting || isSuccess}
+                      minLength={8}
                       className="mt-2 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-base shadow-sm placeholder:text-[#25303B]/40 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#A6D5CE]"
                     />
                   </div>
