@@ -316,6 +316,7 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
                       minLength={8}
                       className="mt-2 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-base shadow-sm placeholder:text-[#25303B]/40 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#A6D5CE]"
                     />
+                    <div className="mt-2 text-xs text-[#25303B]/70">At least 8 characters.</div>
                   </div>
                 </div>
 
@@ -332,6 +333,7 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
                       minLength={8}
                       className="mt-2 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-base shadow-sm placeholder:text-[#25303B]/40 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#A6D5CE]"
                     />
+                    <div className="mt-2 text-xs text-[#25303B]/70">At least 8 characters.</div>
                   </div>
                 </div>
 
