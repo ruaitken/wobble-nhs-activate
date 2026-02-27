@@ -187,7 +187,7 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
   }
 
   const isSuccess = activationStatus === "success";
-  const campaignType = data?.ok === true ? (data.campaign.campaign_type ?? "nhs") : "nhs";
+  const campaignType = data?.ok === true ? (data.campaign.campaign_type ?? "private") : "private";
   const headerPillLabel = campaignType === "nhs" ? "Wobble NHS access" : "Wobble app access";
   const pageTitle = campaignType === "nhs" ? "NHS Activation" : "Wobble Activation";
   const footerHelpText =
