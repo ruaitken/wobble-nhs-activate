@@ -32,6 +32,7 @@ type ActivationResult = { title: string; message: string } | null;
 export default function ActivateClient({ fontClassName }: { fontClassName: string }) {
   const searchParams = useSearchParams();
   const campaignId = searchParams.get("campaign_id");
+  const activationCode = searchParams.get("code");
 
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<ApiResponse | null>(null);
@@ -155,6 +156,7 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
         body: JSON.stringify({
           campaign_id: campaignId,
           access_token: accessToken,
+          code: activationCode,
         }),
       });
 

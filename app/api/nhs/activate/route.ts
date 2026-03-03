@@ -6,6 +6,7 @@ import { getSupabaseServer } from "@/lib/supabaseServer";
 type Body = {
   campaign_id: string;
   access_token: string;
+  code?: string | null;
 };
 
 export async function POST(req: Request) {
@@ -15,6 +16,7 @@ export async function POST(req: Request) {
 
     const campaign_id = body?.campaign_id;
     const access_token = body?.access_token;
+    const code = body?.code ?? null;
 
     if (!campaign_id || !access_token) {
       return NextResponse.json(
@@ -24,7 +26,7 @@ export async function POST(req: Request) {
     }
 
     const { data, error } = await supabase.functions.invoke("nhs-activate", {
-      body: { campaign_id },
+      body: { campaign_id, code },
       headers: {
         Authorization: `Bearer ${access_token}`,
       },
