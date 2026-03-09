@@ -40,6 +40,7 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPasswords, setShowPasswords] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [activationStatus, setActivationStatus] = useState<ActivationStatus>("idle");
@@ -308,16 +309,27 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
                   </div>
                   <div>
                     <label className="text-sm font-semibold">Password</label>
-                    <input
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      type="password"
-                      autoComplete="current-password"
-                      placeholder="Password"
-                      disabled={submitting || isSuccess}
-                      minLength={8}
-                      className="mt-2 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-base shadow-sm placeholder:text-[#25303B]/40 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#A6D5CE]"
-                    />
+                    <div className="relative mt-2">
+                      <input
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        type={showPasswords ? "text" : "password"}
+                        autoComplete="current-password"
+                        placeholder="Password"
+                        disabled={submitting || isSuccess}
+                        minLength={8}
+                        className="w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 pr-16 text-base shadow-sm placeholder:text-[#25303B]/40 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#A6D5CE]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPasswords((prev) => !prev)}
+                        disabled={submitting || isSuccess}
+                        aria-label={showPasswords ? "Hide passwords" : "Show passwords"}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#25303B]/70 transition hover:text-[#25303B] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {showPasswords ? "Hide" : "Show"}
+                      </button>
+                    </div>
                     <div className="mt-2 text-xs text-[#25303B]/70">At least 8 characters.</div>
                   </div>
                 </div>
@@ -325,16 +337,27 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="sm:col-start-2">
                     <label className="text-sm font-semibold">Re-enter password</label>
-                    <input
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      type="password"
-                      autoComplete="current-password"
-                      placeholder="Re-enter password"
-                      disabled={submitting || isSuccess}
-                      minLength={8}
-                      className="mt-2 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-base shadow-sm placeholder:text-[#25303B]/40 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#A6D5CE]"
-                    />
+                    <div className="relative mt-2">
+                      <input
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        type={showPasswords ? "text" : "password"}
+                        autoComplete="current-password"
+                        placeholder="Re-enter password"
+                        disabled={submitting || isSuccess}
+                        minLength={8}
+                        className="w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 pr-16 text-base shadow-sm placeholder:text-[#25303B]/40 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#A6D5CE]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPasswords((prev) => !prev)}
+                        disabled={submitting || isSuccess}
+                        aria-label={showPasswords ? "Hide passwords" : "Show passwords"}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#25303B]/70 transition hover:text-[#25303B] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {showPasswords ? "Hide" : "Show"}
+                      </button>
+                    </div>
                     <div className="mt-2 text-xs text-[#25303B]/70">At least 8 characters.</div>
                   </div>
                 </div>
