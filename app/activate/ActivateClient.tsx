@@ -38,6 +38,7 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
   const [data, setData] = useState<ApiResponse | null>(null);
 
   const [email, setEmail] = useState("");
+  const [confirmEmail, setConfirmEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPasswords, setShowPasswords] = useState(false);
@@ -81,11 +82,22 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
     if (!campaignId || !data || data.ok !== true) return;
 
     const trimmedEmail = email.trim();
-    if (!trimmedEmail || !password || !confirmPassword) {
+    const trimmedConfirmEmail = confirmEmail.trim();
+    if (!trimmedEmail || !trimmedConfirmEmail || !password || !confirmPassword) {
       setActivationStatus("error");
       setResult({
         title: "Check your details",
-        message: "Please enter your email, password, and re-enter your password.",
+        message:
+          "Please enter your email, re-enter your email, password, and re-enter your password.",
+      });
+      return;
+    }
+
+    if (trimmedEmail.toLowerCase() !== trimmedConfirmEmail.toLowerCase()) {
+      setActivationStatus("error");
+      setResult({
+        title: "Emails do not match",
+        message: "Please make sure both email fields match.",
       });
       return;
     }
@@ -193,6 +205,8 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
   const campaignType = data?.ok === true ? (data.campaign.campaign_type ?? "private") : "private";
   const headerPillLabel = campaignType === "nhs" ? "Wobble NHS access" : "Wobble app access";
   const pageTitle = campaignType === "nhs" ? "NHS Activation" : "Wobble Activation";
+  const organisationLabel = campaignType === "nhs" ? "Trust" : "Company";
+  const organisationValueFallback = campaignType === "nhs" ? "NHS Trust" : "Company";
   const footerHelpText =
     campaignType === "nhs"
       ? "Trouble signing in? Double-check your email and password, or contact your NHS service team."
@@ -269,9 +283,9 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
                   <div className="text-sm font-extrabold">Link verified</div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-3">
                     <div className="h-full min-h-[92px] rounded-xl border border-black/10 bg-white/50 p-4">
-                      <div className="text-xs font-semibold text-[#25303B]/70">Trust</div>
+                      <div className="text-xs font-semibold text-[#25303B]/70">{organisationLabel}</div>
                       <div className="mt-1 text-sm font-bold">
-                        {data.campaign.trust_name ?? "NHS Trust"}
+                        {data.campaign.trust_name ?? organisationValueFallback}
                       </div>
                     </div>
                     <div className="h-full min-h-[92px] rounded-xl border border-black/10 bg-white/50 p-4">
@@ -307,6 +321,22 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
                       className="mt-2 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-base shadow-sm placeholder:text-[#25303B]/40 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#A6D5CE]"
                     />
                   </div>
+                  <div>
+                    <label className="text-sm font-semibold">Re-enter email</label>
+                    <input
+                      value={confirmEmail}
+                      onChange={(e) => setConfirmEmail(e.target.value)}
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="example@email.com"
+                      disabled={submitting || isSuccess}
+                      className="mt-2 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-base shadow-sm placeholder:text-[#25303B]/40 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#A6D5CE]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="text-sm font-semibold">Password</label>
                     <div className="relative mt-2">
