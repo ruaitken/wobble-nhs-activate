@@ -362,10 +362,7 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
                     </div>
                     <div className="mt-2 text-xs text-[#25303B]/70">At least 8 characters.</div>
                   </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="sm:col-start-2">
+                  <div>
                     <label className="text-sm font-semibold">Re-enter password</label>
                     <div className="relative mt-2">
                       <input
