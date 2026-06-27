@@ -212,7 +212,7 @@ export function Dashboard({
       </section>
 
       {/* Record holders */}
-      <Section title="Record holders">
+      <Section title="🏅 Record holders">
         <Kpi label="Most active member" value={`${formatNumber(stats.top_member_minutes)} min`} accent />
         <Kpi label="Longest streak" value={`${stats.best_streak} days`} accent />
         <Kpi
@@ -223,7 +223,7 @@ export function Dashboard({
       </Section>
 
       {/* Cohort collective stats */}
-      <Section title="Cohort collective stats">
+      <Section title="👥 Cohort collective stats">
         <Kpi label="Total workouts" value={formatNumber(stats.total_workouts)} />
         <Kpi label="Avg minutes / week" value={formatNumber(stats.avg_minutes_per_active_week)} />
         <Kpi label="Avg sessions / week" value={formatNumber(stats.avg_sessions_per_active_week)} />
@@ -234,7 +234,7 @@ export function Dashboard({
       </Section>
 
       {/* Cohort engagement & usage */}
-      <Section title="Cohort engagement & usage">
+      <Section title="📈 Cohort engagement & usage">
         <Kpi label="Members enrolled" value={formatNumber(stats.enrolled)} />
         <Kpi label="Seats remaining" value={formatNumber(stats.seats_remaining)} />
         <Kpi label="Engagement rate" value={`${stats.engagement_rate_pct}%`} />
@@ -246,7 +246,7 @@ export function Dashboard({
       {/* Who's taking part */}
       <div>
         <h2 className="mb-3 text-sm font-extrabold uppercase tracking-wide text-[#25303B]/70">
-          Who&apos;s taking part
+          🧑‍🤝‍🧑 Who&apos;s taking part
         </h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <DemographicCard title="Age of members" slices={stats.age} />
@@ -304,7 +304,7 @@ function OutcomesSection({ outcomes }: { outcomes: Outcomes }) {
   return (
     <section>
       <h2 className="mb-3 text-sm font-extrabold uppercase tracking-wide text-[#25303B]/70">
-        Outcomes — improvement since starting
+        📊 Outcomes — improvement since starting
       </h2>
       {outcomes.suppressed ? (
         <div className="flex min-h-[120px] flex-col items-center justify-center rounded-2xl border border-dashed border-black/15 bg-[#F9F5EF]/70 p-6 text-center shadow-sm ring-1 ring-black/5">
@@ -338,7 +338,7 @@ function OutcomeCard({ title, metric }: { title: string; metric: OutcomeMetric }
       <div
         className={[
           "mt-1 text-2xl font-extrabold",
-          positive ? "text-[#2F7A6A]" : "text-[#25303B]",
+          positive ? "text-[#1FAF7A]" : "text-[#25303B]",
         ].join(" ")}
       >
         {upliftLabel}
@@ -377,7 +377,7 @@ function FallsCard({ metric }: { metric?: FallsMetric }) {
       <div
         className={[
           "mt-1 text-2xl font-extrabold",
-          improved ? "text-[#2F7A6A]" : "text-[#B4533A]",
+          improved ? "text-[#1FAF7A]" : "text-[#B4533A]",
         ].join(" ")}
       >
         {changeLabel}
