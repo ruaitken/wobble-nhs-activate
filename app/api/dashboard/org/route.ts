@@ -22,6 +22,8 @@ export async function GET(req: Request) {
       .from("dashboard_orgs")
       .select("org_id")
       .eq("dashboard_token", token)
+      .eq("is_active", true)
+      .is("revoked_at", null)
       .maybeSingle();
 
     if (lookupError) {

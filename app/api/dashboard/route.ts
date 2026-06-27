@@ -18,11 +18,14 @@ export async function GET(req: Request) {
     }
 
     // Resolve the opaque dashboard token to a campaign id.
-    // The token (not the human-readable campaign id) is the access key.
-    const { data: campaign, error: lookupError } = await supabase
-      .from("nhs_campaigns")
-      .select("id")
+    // The token is stored separately from nhs_campaigns so it is not exposed
+    // through public campaign metadata reads.
+    const { data: tokenRecord, error: lookupError } = await supabase
+      .from("campaign_dashboard_tokens")
+      .select("campaign_id")
       .eq("dashboard_token", token)
+      .eq("is_active", true)
+      .is("revoked_at", null)
       .maybeSingle();
 
     if (lookupError) {
@@ -32,7 +35,7 @@ export async function GET(req: Request) {
       );
     }
 
-    if (!campaign) {
+    if (!tokenRecord) {
       return NextResponse.json(
         { ok: false, reason: "invalid_token" },
         { status: 404 }
@@ -41,7 +44,7 @@ export async function GET(req: Request) {
 
     const { data: stats, error: rpcError } = await supabase.rpc(
       "get_campaign_stats",
-      { p_campaign_id: campaign.id }
+      { p_campaign_id: tokenRecord.campaign_id }
     );
 
     if (rpcError) {
