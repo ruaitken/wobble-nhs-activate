@@ -338,7 +338,7 @@ function OutcomeCard({ title, metric }: { title: string; metric: OutcomeMetric }
       <div
         className={[
           "mt-1 text-2xl font-extrabold",
-          positive ? "text-[#1FAF7A]" : "text-[#25303B]",
+          positive ? "text-[#34D399]" : "text-[#25303B]",
         ].join(" ")}
       >
         {upliftLabel}
@@ -377,7 +377,7 @@ function FallsCard({ metric }: { metric?: FallsMetric }) {
       <div
         className={[
           "mt-1 text-2xl font-extrabold",
-          improved ? "text-[#1FAF7A]" : "text-[#B4533A]",
+          improved ? "text-[#34D399]" : "text-[#B4533A]",
         ].join(" ")}
       >
         {changeLabel}
