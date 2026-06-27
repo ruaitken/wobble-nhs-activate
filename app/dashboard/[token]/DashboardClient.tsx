@@ -222,20 +222,6 @@ export function Dashboard({
         />
       </Section>
 
-      {/* Outcomes */}
-      <OutcomesSection outcomes={stats.outcomes} />
-
-      {/* Who's taking part */}
-      <div>
-        <h2 className="mb-3 text-sm font-extrabold uppercase tracking-wide text-[#25303B]/70">
-          Who&apos;s taking part
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <DemographicCard title="Age of members" slices={stats.age} />
-          <DemographicCard title="Sex of members" slices={stats.sex} />
-        </div>
-      </div>
-
       {/* Cohort collective stats */}
       <Section title="Cohort collective stats">
         <Kpi label="Total workouts" value={formatNumber(stats.total_workouts)} />
@@ -253,6 +239,20 @@ export function Dashboard({
         <Kpi label="Seats remaining" value={formatNumber(stats.seats_remaining)} />
         <Kpi label="Engagement rate" value={`${stats.engagement_rate_pct}%`} />
       </Section>
+
+      {/* Outcomes */}
+      <OutcomesSection outcomes={stats.outcomes} />
+
+      {/* Who's taking part */}
+      <div>
+        <h2 className="mb-3 text-sm font-extrabold uppercase tracking-wide text-[#25303B]/70">
+          Who&apos;s taking part
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <DemographicCard title="Age of members" slices={stats.age} />
+          <DemographicCard title="Sex of members" slices={stats.sex} />
+        </div>
+      </div>
     </div>
   );
 }
