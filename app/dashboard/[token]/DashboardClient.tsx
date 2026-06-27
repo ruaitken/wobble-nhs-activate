@@ -216,7 +216,7 @@ export function Dashboard({
         <Kpi label="Members enrolled" value={formatNumber(stats.enrolled)} />
         <Kpi label="Seats remaining" value={formatNumber(stats.seats_remaining)} />
         <Kpi label="Engagement rate" value={`${stats.engagement_rate_pct}%`} />
-        <Kpi label="Active in last 7 days" value={formatNumber(stats.active_last_7d)} />
+        <Kpi label="Active in last 30 days" value={formatNumber(stats.active_last_7d)} />
       </Section>
 
       {/* Cohort collective stats */}
