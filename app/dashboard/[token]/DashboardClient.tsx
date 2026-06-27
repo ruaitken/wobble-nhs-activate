@@ -211,25 +211,6 @@ export function Dashboard({
         </p>
       </section>
 
-      {/* Cohort engagement & usage */}
-      <Section title="Cohort engagement & usage">
-        <Kpi label="Members enrolled" value={formatNumber(stats.enrolled)} />
-        <Kpi label="Seats remaining" value={formatNumber(stats.seats_remaining)} />
-        <Kpi label="Engagement rate" value={`${stats.engagement_rate_pct}%`} />
-        <Kpi label="Active in last 30 days" value={formatNumber(stats.active_last_7d)} />
-      </Section>
-
-      {/* Cohort collective stats */}
-      <Section title="Cohort collective stats">
-        <Kpi label="Total workouts" value={formatNumber(stats.total_workouts)} />
-        <Kpi label="Avg minutes / week" value={formatNumber(stats.avg_minutes_per_active_week)} />
-        <Kpi label="Avg sessions / week" value={formatNumber(stats.avg_sessions_per_active_week)} />
-        <Kpi
-          label="Avg per active member"
-          value={`${formatNumber(stats.avg_active_member_minutes)} min`}
-        />
-      </Section>
-
       {/* Record holders */}
       <Section title="Record holders">
         <Kpi label="Most active member" value={`${formatNumber(stats.top_member_minutes)} min`} accent />
@@ -254,6 +235,24 @@ export function Dashboard({
           <DemographicCard title="Sex of members" slices={stats.sex} />
         </div>
       </div>
+
+      {/* Cohort collective stats */}
+      <Section title="Cohort collective stats">
+        <Kpi label="Total workouts" value={formatNumber(stats.total_workouts)} />
+        <Kpi label="Avg minutes / week" value={formatNumber(stats.avg_minutes_per_active_week)} />
+        <Kpi label="Avg sessions / week" value={formatNumber(stats.avg_sessions_per_active_week)} />
+        <Kpi
+          label="Avg per active member"
+          value={`${formatNumber(stats.avg_active_member_minutes)} min`}
+        />
+      </Section>
+
+      {/* Cohort engagement & usage */}
+      <Section title="Cohort engagement & usage">
+        <Kpi label="Members enrolled" value={formatNumber(stats.enrolled)} />
+        <Kpi label="Seats remaining" value={formatNumber(stats.seats_remaining)} />
+        <Kpi label="Engagement rate" value={`${stats.engagement_rate_pct}%`} />
+      </Section>
     </div>
   );
 }
@@ -289,8 +288,10 @@ function Kpi({
   return (
     <div
       className={[
-        "rounded-2xl p-4 shadow-sm ring-1 ring-black/5",
-        accent ? "bg-[#E7B450]/25" : "bg-[#F9F5EF]",
+        "rounded-2xl p-4 shadow-sm ring-1",
+        accent
+          ? "bg-[#E7B450]/40 ring-[#E7B450]/60 shadow-md"
+          : "bg-[#F9F5EF] ring-black/5",
       ].join(" ")}
     >
       <div className="text-xs font-semibold text-[#25303B]/70">{label}</div>
