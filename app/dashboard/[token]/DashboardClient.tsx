@@ -330,20 +330,23 @@ function OutcomeCard({ title, metric }: { title: string; metric: OutcomeMetric }
   const uplift = metric.uplift_pct;
   const upliftLabel =
     uplift === null ? "—" : `${uplift > 0 ? "+" : ""}${uplift}%`;
-  const maintainedLabel =
-    metric.maintained_pct === null ? "—" : `${metric.maintained_pct}%`;
+  const positive = uplift !== null && uplift > 0;
 
   return (
     <div className="rounded-2xl bg-[#F9F5EF] p-4 shadow-sm ring-1 ring-black/5">
       <div className="text-xs font-semibold text-[#25303B]/70">{title}</div>
-      <div className="mt-1 text-2xl font-extrabold text-[#34D399]">
-        {maintainedLabel}
+      <div
+        className={[
+          "mt-1 text-2xl font-extrabold",
+          positive ? "text-[#34D399]" : "text-[#25303B]",
+        ].join(" ")}
+      >
+        {upliftLabel}
       </div>
       <div className="mt-1 text-xs text-[#25303B]/70">
-        maintained or improved
-      </div>
-      <div className="mt-1 text-xs text-[#25303B]/55">
-        Avg change: {upliftLabel}
+        {metric.maintained_pct === null
+          ? "average change"
+          : `${metric.maintained_pct}% maintained or improved`}
       </div>
     </div>
   );
@@ -354,7 +357,7 @@ function FallsCard({ metric }: { metric?: FallsMetric }) {
   const reduced = metric?.reduced_pct ?? null;
 
   // No data yet (e.g. fall counts have not been collected on retakes).
-  if (reduced === null) {
+  if (change === null || reduced === null) {
     return (
       <div className="flex flex-col justify-center rounded-2xl border border-dashed border-black/15 bg-[#F9F5EF]/70 p-4 text-center shadow-sm ring-1 ring-black/5">
         <div className="text-sm font-extrabold">Falls</div>
@@ -367,18 +370,21 @@ function FallsCard({ metric }: { metric?: FallsMetric }) {
 
   const changeLabel =
     change === null ? "—" : `${change > 0 ? "+" : ""}${change}%`;
+  const improved = change !== null && change < 0;
 
   return (
     <div className="rounded-2xl bg-[#F9F5EF] p-4 shadow-sm ring-1 ring-black/5">
       <div className="text-xs font-semibold text-[#25303B]/70">Falls</div>
-      <div className="mt-1 text-2xl font-extrabold text-[#34D399]">
-        {reduced}%
+      <div
+        className={[
+          "mt-1 text-2xl font-extrabold",
+          improved ? "text-[#34D399]" : "text-[#B4533A]",
+        ].join(" ")}
+      >
+        {changeLabel}
       </div>
       <div className="mt-1 text-xs text-[#25303B]/70">
-        maintained or reduced
-      </div>
-      <div className="mt-1 text-xs text-[#25303B]/55">
-        Avg change: {changeLabel}
+        {reduced}% maintained or reduced
       </div>
     </div>
   );
