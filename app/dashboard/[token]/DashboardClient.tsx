@@ -330,23 +330,20 @@ function OutcomeCard({ title, metric }: { title: string; metric: OutcomeMetric }
   const uplift = metric.uplift_pct;
   const upliftLabel =
     uplift === null ? "—" : `${uplift > 0 ? "+" : ""}${uplift}%`;
-  const positive = uplift !== null && uplift > 0;
+  const maintainedLabel =
+    metric.maintained_pct === null ? "—" : `${metric.maintained_pct}%`;
 
   return (
     <div className="rounded-2xl bg-[#F9F5EF] p-4 shadow-sm ring-1 ring-black/5">
       <div className="text-xs font-semibold text-[#25303B]/70">{title}</div>
-      <div
-        className={[
-          "mt-1 text-2xl font-extrabold",
-          positive ? "text-[#34D399]" : "text-[#25303B]",
-        ].join(" ")}
-      >
-        {upliftLabel}
+      <div className="mt-1 text-2xl font-extrabold text-[#34D399]">
+        {maintainedLabel}
       </div>
       <div className="mt-1 text-xs text-[#25303B]/70">
-        {metric.maintained_pct === null
-          ? "average change"
-          : `${metric.maintained_pct}% maintained or improved`}
+        maintained or improved
+      </div>
+      <div className="mt-1 text-xs text-[#25303B]/55">
+        Avg change: {upliftLabel}
       </div>
     </div>
   );
@@ -354,9 +351,10 @@ function OutcomeCard({ title, metric }: { title: string; metric: OutcomeMetric }
 
 function FallsCard({ metric }: { metric?: FallsMetric }) {
   const change = metric?.change_pct ?? null;
+  const reduced = metric?.reduced_pct ?? null;
 
-  // No data yet (e.g. everyone's baseline falls are 0 / not collected).
-  if (change === null) {
+  // No data yet (e.g. fall counts have not been collected on retakes).
+  if (reduced === null) {
     return (
       <div className="flex flex-col justify-center rounded-2xl border border-dashed border-black/15 bg-[#F9F5EF]/70 p-4 text-center shadow-sm ring-1 ring-black/5">
         <div className="text-sm font-extrabold">Falls</div>
@@ -367,25 +365,20 @@ function FallsCard({ metric }: { metric?: FallsMetric }) {
     );
   }
 
-  // For falls, a reduction (negative change) is the good outcome.
-  const improved = change < 0;
-  const changeLabel = `${change > 0 ? "+" : ""}${change}%`;
+  const changeLabel =
+    change === null ? "—" : `${change > 0 ? "+" : ""}${change}%`;
 
   return (
     <div className="rounded-2xl bg-[#F9F5EF] p-4 shadow-sm ring-1 ring-black/5">
       <div className="text-xs font-semibold text-[#25303B]/70">Falls</div>
-      <div
-        className={[
-          "mt-1 text-2xl font-extrabold",
-          improved ? "text-[#34D399]" : "text-[#B4533A]",
-        ].join(" ")}
-      >
-        {changeLabel}
+      <div className="mt-1 text-2xl font-extrabold text-[#34D399]">
+        {reduced}%
       </div>
       <div className="mt-1 text-xs text-[#25303B]/70">
-        {metric?.reduced_pct == null
-          ? "average change"
-          : `${metric.reduced_pct}% maintained or reduced`}
+        maintained or reduced
+      </div>
+      <div className="mt-1 text-xs text-[#25303B]/55">
+        Avg change: {changeLabel}
       </div>
     </div>
   );
