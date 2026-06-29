@@ -181,7 +181,10 @@ export default function DashboardClient({
         )}
 
         <footer className="mt-6 text-xs text-[#25303B]/70">
-          Figures are aggregated and anonymised. Updated automatically.
+          All information displayed within this dashboard is aggregated and
+          anonymised. Outcome measures are only shown where sufficient
+          participant numbers exist to protect individual privacy. No personally
+          identifiable information is displayed.
         </footer>
       </div>
     </main>
