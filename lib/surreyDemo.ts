@@ -141,3 +141,17 @@ export function grandTotal(): number {
 export function findRegion(region: string): RegionStat | undefined {
   return SURREY_GEO.find((r) => r.region === region);
 }
+
+export function townsForRegion(region: string): TownStat[] {
+  const r = findRegion(region);
+  return r ? r.boroughs.flatMap((b) => b.towns) : [];
+}
+
+export function townsForBorough(region: string, borough: string): TownStat[] {
+  const r = findRegion(region);
+  return r?.boroughs.find((b) => b.borough === borough)?.towns ?? [];
+}
+
+export function allTowns(): TownStat[] {
+  return SURREY_GEO.flatMap((r) => r.boroughs.flatMap((b) => b.towns));
+}

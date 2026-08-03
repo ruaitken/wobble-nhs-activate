@@ -16,7 +16,16 @@ import {
   Legend,
 } from "recharts";
 import { Dashboard, formatNumber, type Stats } from "../[token]/DashboardClient";
-import { SURREY_GEO, boroughTotal, regionTotal, grandTotal, findRegion } from "@/lib/surreyDemo";
+import {
+  SURREY_GEO,
+  regionTotal,
+  grandTotal,
+  findRegion,
+  townsForRegion,
+  townsForBorough,
+  allTowns,
+  type TownStat,
+} from "@/lib/surreyDemo";
 
 const PIE_COLORS = ["#25303B", "#A6D5CE", "#E58B66", "#E7B450", "#7FA8A0", "#C9C2B6"];
 
@@ -26,27 +35,183 @@ const TOTAL_MEMBERS = grandTotal();
 // in a slice we suppress cohort stats to protect individuals.
 const MIN_MEMBERS = 5;
 
-// Per-member ratios derived from a realistic county-wide baseline. Every metric
-// below is scaled from the number of members in the currently selected area, so
-// drilling down narrows the whole dashboard and stepping back widens it.
-const AVG_ACTIVE_MEMBER_MINUTES = 216;
-const ACTIVE_RATE = 101 / 130;
-const ACTIVE_7D_RATE = 74 / 130;
-const WORKOUTS_PER_ENROLLED = 1180 / 130;
-const PAIRED_RATE = 46 / 130;
-const SEAT_RATIO = 150 / 130;
-
-const AGE_DIST = [
+const AGE_BASE = [
   { label: "65-74", pct: 38 },
   { label: "50-64", pct: 28 },
   { label: "75+", pct: 22 },
   { label: "Under 50", pct: 12 },
 ];
-const SEX_DIST = [
+const SEX_BASE = [
   { label: "Female", pct: 62 },
   { label: "Male", pct: 33 },
   { label: "Unknown", pct: 5 },
 ];
+
+// -----------------------------------------------------------------------------
+// Deterministic per-area profiles
+//
+// Each town gets its own metric profile, seeded from its name, so every area
+// looks different (records, outcomes, engagement, seat fill) while staying
+// positive and stable across clicks. Scope-level figures are AGGREGATED from
+// the towns in scope, so numbers roll up correctly: county = Σ regions =
+// Σ boroughs = Σ towns.
+// -----------------------------------------------------------------------------
+
+function hashString(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seed: number) {
+  let a = seed;
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+type Rng = () => number;
+function inRange(rng: Rng, min: number, max: number) {
+  return min + (max - min) * rng();
+}
+
+function jitterDist(rng: Rng, base: { label: string; pct: number }[], amp: number) {
+  const raw = base.map((b) => ({ label: b.label, v: Math.max(1, b.pct + (rng() * 2 - 1) * amp) }));
+  const sum = raw.reduce((s, r) => s + r.v, 0);
+  return raw.map((r) => ({ label: r.label, pct: (r.v / sum) * 100 }));
+}
+
+type TownProfile = {
+  enrolled: number;
+  allocated: number;
+  activeUsers: number;
+  active7d: number;
+  totalMinutes: number;
+  totalWorkouts: number;
+  paired: number;
+  bestStreak: number;
+  topMemberMinutes: number;
+  highestWeeklyMinutes: number;
+  ageCounts: { label: string; n: number }[];
+  sexCounts: { label: string; n: number }[];
+  sitToStand: { uplift: number; maintained: number };
+  balance: { uplift: number; maintained: number };
+  confidence: { uplift: number; maintained: number };
+  falls: { change: number; reduced: number };
+};
+
+const profileCache = new Map<string, TownProfile>();
+
+function townProfile(town: string, enrolled: number): TownProfile {
+  const cached = profileCache.get(town);
+  if (cached) return cached;
+
+  const rng = mulberry32(hashString(town));
+
+  const fill = inRange(rng, 0.7, 0.93);
+  const allocated = Math.max(enrolled + 1, Math.round(enrolled / fill));
+
+  const activeRate = inRange(rng, 0.66, 0.86);
+  const activeUsers = Math.max(1, Math.round(enrolled * activeRate));
+  const active7d = Math.round(activeUsers * inRange(rng, 0.62, 0.82));
+
+  const avgMemberMinutes = inRange(rng, 175, 255);
+  const totalMinutes = Math.round(activeUsers * avgMemberMinutes);
+  const totalWorkouts = Math.round(enrolled * inRange(rng, 7.5, 10.5));
+  const paired = Math.round(enrolled * inRange(rng, 0.28, 0.44));
+
+  const age = jitterDist(rng, AGE_BASE, 7);
+  const sex = jitterDist(rng, SEX_BASE, 4);
+
+  const profile: TownProfile = {
+    enrolled,
+    allocated,
+    activeUsers,
+    active7d,
+    totalMinutes,
+    totalWorkouts,
+    paired,
+    bestStreak: Math.round(inRange(rng, 18, 46)),
+    topMemberMinutes: Math.round(inRange(rng, 520, 900)),
+    highestWeeklyMinutes: Math.round(inRange(rng, 120, 205)),
+    ageCounts: age.map((a) => ({ label: a.label, n: Math.round((a.pct / 100) * enrolled) })),
+    sexCounts: sex.map((s) => ({ label: s.label, n: Math.round((s.pct / 100) * enrolled) })),
+    sitToStand: { uplift: Math.round(inRange(rng, 30, 52)), maintained: Math.round(inRange(rng, 80, 94)) },
+    balance: { uplift: Math.round(inRange(rng, 16, 32)), maintained: Math.round(inRange(rng, 78, 92)) },
+    confidence: { uplift: Math.round(inRange(rng, 12, 26)), maintained: Math.round(inRange(rng, 82, 95)) },
+    falls: { change: -Math.round(inRange(rng, 22, 40)), reduced: Math.round(inRange(rng, 74, 90)) },
+  };
+
+  profileCache.set(town, profile);
+  return profile;
+}
+
+type Aggregate = {
+  enrolled: number;
+  allocated: number;
+  activeUsers: number;
+  active7d: number;
+  totalMinutes: number;
+  totalWorkouts: number;
+  paired: number;
+  bestStreak: number;
+  topMemberMinutes: number;
+  highestWeeklyMinutes: number;
+  age: { label: string; n: number }[];
+  sex: { label: string; n: number }[];
+  sitToStand: { uplift: number; maintained: number };
+  balance: { uplift: number; maintained: number };
+  confidence: { uplift: number; maintained: number };
+  falls: { change: number; reduced: number };
+};
+
+function sumCounts(profiles: TownProfile[], pick: (p: TownProfile) => { label: string; n: number }[]) {
+  const map = new Map<string, number>();
+  for (const p of profiles) {
+    for (const c of pick(p)) map.set(c.label, (map.get(c.label) ?? 0) + c.n);
+  }
+  return Array.from(map.entries()).map(([label, n]) => ({ label, n }));
+}
+
+function aggregate(towns: TownStat[]): Aggregate {
+  const profiles = towns.map((t) => townProfile(t.town, t.n));
+  const sum = (pick: (p: TownProfile) => number) => profiles.reduce((s, p) => s + pick(p), 0);
+  const max = (pick: (p: TownProfile) => number) => profiles.reduce((s, p) => Math.max(s, pick(p)), 0);
+
+  const paired = sum((p) => p.paired);
+  // Outcome percentages are averaged across areas, weighted by how many members
+  // completed a retake — so they vary by area but stay grounded and positive.
+  const wavg = (pick: (p: TownProfile) => number) => {
+    if (paired <= 0) return 0;
+    return profiles.reduce((s, p) => s + pick(p) * p.paired, 0) / paired;
+  };
+
+  return {
+    enrolled: sum((p) => p.enrolled),
+    allocated: sum((p) => p.allocated),
+    activeUsers: sum((p) => p.activeUsers),
+    active7d: sum((p) => p.active7d),
+    totalMinutes: sum((p) => p.totalMinutes),
+    totalWorkouts: sum((p) => p.totalWorkouts),
+    paired,
+    bestStreak: max((p) => p.bestStreak),
+    topMemberMinutes: max((p) => p.topMemberMinutes),
+    highestWeeklyMinutes: max((p) => p.highestWeeklyMinutes),
+    age: sumCounts(profiles, (p) => p.ageCounts),
+    sex: sumCounts(profiles, (p) => p.sexCounts),
+    sitToStand: { uplift: Math.round(wavg((p) => p.sitToStand.uplift)), maintained: Math.round(wavg((p) => p.sitToStand.maintained)) },
+    balance: { uplift: Math.round(wavg((p) => p.balance.uplift)), maintained: Math.round(wavg((p) => p.balance.maintained)) },
+    confidence: { uplift: Math.round(wavg((p) => p.confidence.uplift)), maintained: Math.round(wavg((p) => p.confidence.maintained)) },
+    falls: { change: Math.round(wavg((p) => p.falls.change)), reduced: Math.round(wavg((p) => p.falls.reduced)) },
+  };
+}
 
 type Level =
   | { view: "overview" }
@@ -54,7 +219,7 @@ type Level =
   | { view: "borough"; region: string; borough: string }
   | { view: "town"; region: string; borough: string; town: string };
 
-type Scope = { members: number; label: string; path: string[] };
+type Scope = { label: string; path: string[]; towns: TownStat[] };
 
 function pct(n: number, total: number) {
   return total > 0 ? Math.round((n / total) * 1000) / 10 : 0;
@@ -62,37 +227,36 @@ function pct(n: number, total: number) {
 
 function getScope(level: Level): Scope {
   if (level.view === "overview") {
-    return { members: TOTAL_MEMBERS, label: "Surrey County Council", path: [] };
+    return { label: "Surrey County Council", path: [], towns: allTowns() };
   }
-  const region = findRegion(level.region);
   if (level.view === "region") {
-    return { members: region ? regionTotal(region) : 0, label: level.region, path: [level.region] };
+    return { label: level.region, path: [level.region], towns: townsForRegion(level.region) };
   }
-  const borough = region?.boroughs.find((b) => b.borough === level.borough);
   if (level.view === "borough") {
     return {
-      members: borough ? boroughTotal(borough) : 0,
       label: level.borough,
       path: [level.region, level.borough],
+      towns: townsForBorough(level.region, level.borough),
     };
   }
-  const town = borough?.towns.find((t) => t.town === level.town);
+  const town = townsForBorough(level.region, level.borough).find((t) => t.town === level.town);
   return {
-    members: town ? town.n : 0,
     label: level.town,
     path: [level.region, level.borough, level.town],
+    towns: town ? [town] : [],
   };
 }
 
-function buildStats(scope: Scope): Extract<Stats, { found: true; suppressed: false }> {
-  const enrolled = scope.members;
-  const active_users = Math.round(enrolled * ACTIVE_RATE);
-  const active_last_7d = Math.round(enrolled * ACTIVE_7D_RATE);
-  const total_minutes = active_users * AVG_ACTIVE_MEMBER_MINUTES;
-  const total_workouts = Math.round(enrolled * WORKOUTS_PER_ENROLLED);
-  const engagement_rate_pct = enrolled > 0 ? Math.round((active_users / enrolled) * 100) : 0;
-  const seat_limit = Math.max(enrolled, Math.round(enrolled * SEAT_RATIO));
-  const paired = Math.round(enrolled * PAIRED_RATE);
+function scopeMembers(scope: Scope) {
+  return scope.towns.reduce((s, t) => s + t.n, 0);
+}
+
+function statsForScope(scope: Scope): Extract<Stats, { found: true; suppressed: false }> {
+  const agg = aggregate(scope.towns);
+  const enrolled = agg.enrolled;
+  const avgActive = agg.activeUsers > 0 ? Math.round(agg.totalMinutes / agg.activeUsers) : 0;
+  const perWeek = Math.round(avgActive / 4.6);
+  const sessions = Math.max(2, Math.round(perWeek / 11.75));
 
   return {
     found: true,
@@ -101,39 +265,40 @@ function buildStats(scope: Scope): Extract<Stats, { found: true; suppressed: fal
     trust_name: scope.label,
     service_name: "Falls Prevention Programme",
     enrolled,
-    seat_limit,
-    seats_remaining: seat_limit - enrolled,
-    active_users,
-    engagement_rate_pct,
-    active_last_7d,
-    total_minutes,
-    total_workouts,
-    best_streak: Math.min(31, Math.max(4, Math.round(31 * (0.55 + 0.45 * (enrolled / TOTAL_MEMBERS))))),
-    top_member_minutes: Math.min(712, total_minutes),
-    highest_weekly_minutes: Math.min(158, total_minutes),
-    avg_active_member_minutes: AVG_ACTIVE_MEMBER_MINUTES,
-    avg_minutes_per_active_week: 47,
-    avg_sessions_per_active_week: 4,
-    age: AGE_DIST.map((a) => ({ label: a.label, pct: a.pct, n: Math.round((a.pct / 100) * enrolled) })),
-    sex: SEX_DIST.map((s) => ({ label: s.label, pct: s.pct, n: Math.round((s.pct / 100) * enrolled) })),
+    seat_limit: agg.allocated,
+    seats_remaining: Math.max(0, agg.allocated - enrolled),
+    active_users: agg.activeUsers,
+    engagement_rate_pct: enrolled > 0 ? Math.round((agg.activeUsers / enrolled) * 100) : 0,
+    active_last_7d: agg.active7d,
+    total_minutes: agg.totalMinutes,
+    total_workouts: agg.totalWorkouts,
+    best_streak: agg.bestStreak,
+    top_member_minutes: agg.topMemberMinutes,
+    highest_weekly_minutes: agg.highestWeeklyMinutes,
+    avg_active_member_minutes: avgActive,
+    avg_minutes_per_active_week: perWeek,
+    avg_sessions_per_active_week: sessions,
+    age: agg.age.map((a) => ({ label: a.label, n: a.n, pct: enrolled > 0 ? Math.round((a.n / enrolled) * 100) : 0 })),
+    sex: agg.sex.map((s) => ({ label: s.label, n: s.n, pct: enrolled > 0 ? Math.round((s.n / enrolled) * 100) : 0 })),
     outcomes:
-      paired >= MIN_MEMBERS
+      agg.paired >= MIN_MEMBERS
         ? {
             suppressed: false,
-            paired_members: paired,
-            sit_to_stand: { uplift_pct: 42, maintained_pct: 88 },
-            balance: { uplift_pct: 24, maintained_pct: 82 },
-            confidence: { uplift_pct: 18, maintained_pct: 90 },
-            falls: { change_pct: -32, reduced_pct: 80 },
+            paired_members: agg.paired,
+            sit_to_stand: { uplift_pct: agg.sitToStand.uplift, maintained_pct: agg.sitToStand.maintained },
+            balance: { uplift_pct: agg.balance.uplift, maintained_pct: agg.balance.maintained },
+            confidence: { uplift_pct: agg.confidence.uplift, maintained_pct: agg.confidence.maintained },
+            falls: { change_pct: agg.falls.change, reduced_pct: agg.falls.reduced },
           }
-        : { suppressed: true, paired_members: paired },
+        : { suppressed: true, paired_members: agg.paired },
   };
 }
 
 export default function SurreyDashboardClient({ fontClassName }: { fontClassName: string }) {
   const [level, setLevel] = useState<Level>({ view: "overview" });
   const scope = getScope(level);
-  const stats = buildStats(scope);
+  const members = scopeMembers(scope);
+  const stats = statsForScope(scope);
 
   return (
     <main className={[fontClassName, "min-h-screen bg-[#A6D5CE] text-[#25303B]"].join(" ")}>
@@ -169,15 +334,15 @@ export default function SurreyDashboardClient({ fontClassName }: { fontClassName
         </div>
 
         <div className="space-y-6">
-          <LocationExplorer level={level} scope={scope} onNavigate={setLevel} />
+          <LocationExplorer level={level} scopeLabel={scope.label} members={members} onNavigate={setLevel} />
 
-          {scope.members < MIN_MEMBERS ? (
+          {members < MIN_MEMBERS ? (
             <div className="rounded-2xl border border-black/10 bg-[#F9F5EF] p-6 shadow-xl ring-1 ring-black/5">
               <div className="text-sm font-extrabold">Not enough members to show this area</div>
               <div className="mt-1 text-sm text-[#25303B]/80">
                 To protect individual privacy, cohort statistics only appear once at least{" "}
                 {MIN_MEMBERS} members are enrolled in the selected area. {scope.label} currently has{" "}
-                {scope.members}. Step back up a level to widen the filter.
+                {members}. Step back up a level to widen the filter.
               </div>
             </div>
           ) : (
@@ -197,11 +362,13 @@ export default function SurreyDashboardClient({ fontClassName }: { fontClassName
 
 function LocationExplorer({
   level,
-  scope,
+  scopeLabel,
+  members,
   onNavigate,
 }: {
   level: Level;
-  scope: Scope;
+  scopeLabel: string;
+  members: number;
   onNavigate: (l: Level) => void;
 }) {
   const overviewData = SURREY_GEO.map((r) => {
@@ -225,9 +392,9 @@ function LocationExplorer({
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#25303B]/15 bg-[#25303B]/[0.04] px-4 py-3">
         <div className="text-sm">
           <span className="font-semibold text-[#25303B]/70">Filtering dashboard by: </span>
-          <span className="font-extrabold">{scope.label}</span>
+          <span className="font-extrabold">{scopeLabel}</span>
           <span className="ml-2 rounded-full bg-[#25303B] px-2 py-0.5 text-xs font-bold text-[#F9F5EF]">
-            {formatNumber(scope.members)} members
+            {formatNumber(members)} members
           </span>
         </div>
         {level.view !== "overview" && (
@@ -427,18 +594,20 @@ function RegionView({
   onSelect: (borough: string) => void;
 }) {
   const regionData = findRegion(region);
-  const total = regionData ? regionTotal(regionData) : 0;
   const bars = (regionData?.boroughs ?? [])
-    .map((b) => ({ name: b.borough, n: boroughTotal(b) }))
-    .sort((a, b) => b.n - a.n);
+    .map((b) => {
+      const agg = aggregate(b.towns);
+      return { name: b.borough, minutes: agg.totalMinutes, members: agg.enrolled };
+    })
+    .sort((a, b) => b.minutes - a.minutes);
 
   return (
     <div>
       <p className="mb-3 text-xs text-[#25303B]/70">
-        Districts within <span className="font-bold">{region}</span> — click one to filter the dashboard
-        to that district.
+        Exercise minutes delivered by district in <span className="font-bold">{region}</span> — click a
+        bar to filter the dashboard to that district.
       </p>
-      <DrillBar bars={bars} total={total} onSelect={onSelect} nextLevel="towns" />
+      <DrillBar bars={bars} onSelect={onSelect} nextLevel="towns" />
     </div>
   );
 }
@@ -452,20 +621,20 @@ function BoroughView({
   borough: string;
   onSelect: (town: string) => void;
 }) {
-  const regionData = findRegion(region);
-  const boroughData = regionData?.boroughs.find((b) => b.borough === borough);
-  const total = boroughData ? boroughTotal(boroughData) : 0;
-  const bars = (boroughData?.towns ?? [])
-    .map((t) => ({ name: t.town, n: t.n }))
-    .sort((a, b) => b.n - a.n);
+  const bars = townsForBorough(region, borough)
+    .map((t) => {
+      const agg = aggregate([t]);
+      return { name: t.town, minutes: agg.totalMinutes, members: agg.enrolled };
+    })
+    .sort((a, b) => b.minutes - a.minutes);
 
   return (
     <div>
       <p className="mb-3 text-xs text-[#25303B]/70">
-        Towns within <span className="font-bold">{borough}</span> — click one to filter the dashboard
-        to that town.
+        Exercise minutes delivered by town in <span className="font-bold">{borough}</span> — click a bar
+        to filter the dashboard to that town.
       </p>
-      <DrillBar bars={bars} total={total} onSelect={onSelect} nextLevel="town" />
+      <DrillBar bars={bars} onSelect={onSelect} nextLevel="town" />
     </div>
   );
 }
@@ -484,22 +653,30 @@ function TownView({ town, borough }: { town: string; borough: string }) {
 
 function DrillBar({
   bars,
-  total,
   onSelect,
   nextLevel,
 }: {
-  bars: { name: string; n: number }[];
-  total: number;
+  bars: { name: string; minutes: number; members: number }[];
   onSelect?: (name: string) => void;
   nextLevel?: string;
 }) {
   const height = Math.max(200, bars.length * 46);
   return (
-    <div style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={bars} layout="vertical" margin={{ left: 24, right: 32 }}>
+    <div style={{ height: height + 26 }}>
+      <ResponsiveContainer width="100%" height={height}>
+        <BarChart data={bars} layout="vertical" margin={{ left: 24, right: 40, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#25303B14" />
-          <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+          <XAxis
+            type="number"
+            tick={{ fontSize: 11 }}
+            tickFormatter={(v) => formatNumber(Number(v))}
+            label={{
+              value: "Exercise minutes delivered",
+              position: "insideBottom",
+              offset: -2,
+              style: { fontSize: 11, fontWeight: 700, fill: "#25303B99" },
+            }}
+          />
           <YAxis
             type="category"
             dataKey="name"
@@ -507,14 +684,15 @@ function DrillBar({
             tick={{ fontSize: 12, fontWeight: 600 }}
           />
           <Tooltip
-            formatter={(value) => {
-              const n = Number(value);
-              return [`${n} members (${pct(n, total)}%)`, "Members"];
+            formatter={(value, _name, item) => {
+              const mins = Number(value);
+              const members = (item?.payload as { members?: number })?.members ?? 0;
+              return [`${formatNumber(mins)} mins · ${formatNumber(members)} members`, "Delivered"];
             }}
             cursor={{ fill: "#25303B0a" }}
           />
           <Bar
-            dataKey="n"
+            dataKey="minutes"
             radius={[0, 6, 6, 0]}
             onClick={(entry) => onSelect?.((entry as unknown as { name: string }).name)}
           >
