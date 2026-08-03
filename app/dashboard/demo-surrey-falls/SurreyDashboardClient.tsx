@@ -145,6 +145,22 @@ function LocationExplorer() {
         </div>
       </div>
 
+      {level.view !== "overview" && (
+        <button
+          onClick={() =>
+            setLevel(
+              level.view === "borough"
+                ? { view: "region", region: level.region }
+                : { view: "overview" }
+            )
+          }
+          className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white/70 px-3 py-1.5 text-xs font-bold text-[#25303B] shadow-sm transition hover:bg-white"
+        >
+          <span aria-hidden>←</span>
+          {level.view === "borough" ? `Back to ${level.region}` : "Back to Surrey overview"}
+        </button>
+      )}
+
       <div className="mt-4">
         {level.view === "overview" && (
           <OverviewView
@@ -175,26 +191,31 @@ function Breadcrumbs({
   level: Level;
   onNavigate: (l: Level) => void;
 }) {
-  const crumbClass = "text-xs font-semibold text-[#25303B]/70 transition hover:text-[#25303B]";
+  const crumbClass =
+    "text-xs font-semibold text-[#25303B]/80 underline decoration-[#25303B]/30 underline-offset-2 transition hover:text-[#25303B] hover:decoration-[#25303B]";
   return (
-    <div className="mt-1 flex flex-wrap items-center gap-1 text-xs text-[#25303B]/50">
+    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[#25303B]/40">
       <button className={crumbClass} onClick={() => onNavigate({ view: "overview" })}>
         Surrey overview
       </button>
       {level.view !== "overview" && (
         <>
-          <span>/</span>
-          <button
-            className={crumbClass}
-            onClick={() => onNavigate({ view: "region", region: level.region })}
-          >
-            {level.region}
-          </button>
+          <span>›</span>
+          {level.view === "borough" ? (
+            <button
+              className={crumbClass}
+              onClick={() => onNavigate({ view: "region", region: level.region })}
+            >
+              {level.region}
+            </button>
+          ) : (
+            <span className="text-xs font-bold text-[#25303B]">{level.region}</span>
+          )}
         </>
       )}
       {level.view === "borough" && (
         <>
-          <span>/</span>
+          <span>›</span>
           <span className="text-xs font-bold text-[#25303B]">{level.borough}</span>
         </>
       )}
