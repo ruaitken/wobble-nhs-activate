@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import {
   PieChart,
@@ -16,63 +16,125 @@ import {
   Legend,
 } from "recharts";
 import { Dashboard, formatNumber, type Stats } from "../[token]/DashboardClient";
-import { SURREY_GEO, boroughTotal, regionTotal, grandTotal } from "@/lib/surreyDemo";
+import { SURREY_GEO, boroughTotal, regionTotal, grandTotal, findRegion } from "@/lib/surreyDemo";
 
 const PIE_COLORS = ["#25303B", "#A6D5CE", "#E58B66", "#E7B450", "#7FA8A0", "#C9C2B6"];
 
 const TOTAL_MEMBERS = grandTotal();
 
-const DEMO_STATS: Extract<Stats, { found: true; suppressed: false }> = {
-  found: true,
-  suppressed: false,
-  campaign_id: "DEMO_SURREY_FALLS_2026",
-  trust_name: "Surrey County Council",
-  service_name: "Falls Prevention Programme",
-  enrolled: TOTAL_MEMBERS,
-  seat_limit: 150,
-  seats_remaining: 150 - TOTAL_MEMBERS,
-  active_users: 101,
-  engagement_rate_pct: 78,
-  active_last_7d: 74,
-  total_minutes: 21850,
-  total_workouts: 1180,
-  best_streak: 31,
-  top_member_minutes: 712,
-  highest_weekly_minutes: 158,
-  avg_active_member_minutes: 216,
-  avg_minutes_per_active_week: 47,
-  avg_sessions_per_active_week: 4,
-  age: [
-    { label: "65-74", n: 50, pct: 38 },
-    { label: "50-64", n: 37, pct: 28 },
-    { label: "75+", n: 28, pct: 22 },
-    { label: "Under 50", n: 15, pct: 12 },
-  ],
-  sex: [
-    { label: "Female", n: 81, pct: 62 },
-    { label: "Male", n: 43, pct: 33 },
-    { label: "Unknown", n: 6, pct: 5 },
-  ],
-  outcomes: {
-    suppressed: false,
-    paired_members: 46,
-    sit_to_stand: { uplift_pct: 42, maintained_pct: 88 },
-    balance: { uplift_pct: 24, maintained_pct: 82 },
-    confidence: { uplift_pct: 18, maintained_pct: 90 },
-    falls: { change_pct: -32, reduced_pct: 80 },
-  },
-};
+// Privacy threshold (mirrors the production dashboard): below this many members
+// in a slice we suppress cohort stats to protect individuals.
+const MIN_MEMBERS = 5;
+
+// Per-member ratios derived from a realistic county-wide baseline. Every metric
+// below is scaled from the number of members in the currently selected area, so
+// drilling down narrows the whole dashboard and stepping back widens it.
+const AVG_ACTIVE_MEMBER_MINUTES = 216;
+const ACTIVE_RATE = 101 / 130;
+const ACTIVE_7D_RATE = 74 / 130;
+const WORKOUTS_PER_ENROLLED = 1180 / 130;
+const PAIRED_RATE = 46 / 130;
+const SEAT_RATIO = 150 / 130;
+
+const AGE_DIST = [
+  { label: "65-74", pct: 38 },
+  { label: "50-64", pct: 28 },
+  { label: "75+", pct: 22 },
+  { label: "Under 50", pct: 12 },
+];
+const SEX_DIST = [
+  { label: "Female", pct: 62 },
+  { label: "Male", pct: 33 },
+  { label: "Unknown", pct: 5 },
+];
 
 type Level =
   | { view: "overview" }
   | { view: "region"; region: string }
-  | { view: "borough"; region: string; borough: string };
+  | { view: "borough"; region: string; borough: string }
+  | { view: "town"; region: string; borough: string; town: string };
+
+type Scope = { members: number; label: string; path: string[] };
 
 function pct(n: number, total: number) {
   return total > 0 ? Math.round((n / total) * 1000) / 10 : 0;
 }
 
+function getScope(level: Level): Scope {
+  if (level.view === "overview") {
+    return { members: TOTAL_MEMBERS, label: "Surrey County Council", path: [] };
+  }
+  const region = findRegion(level.region);
+  if (level.view === "region") {
+    return { members: region ? regionTotal(region) : 0, label: level.region, path: [level.region] };
+  }
+  const borough = region?.boroughs.find((b) => b.borough === level.borough);
+  if (level.view === "borough") {
+    return {
+      members: borough ? boroughTotal(borough) : 0,
+      label: level.borough,
+      path: [level.region, level.borough],
+    };
+  }
+  const town = borough?.towns.find((t) => t.town === level.town);
+  return {
+    members: town ? town.n : 0,
+    label: level.town,
+    path: [level.region, level.borough, level.town],
+  };
+}
+
+function buildStats(scope: Scope): Extract<Stats, { found: true; suppressed: false }> {
+  const enrolled = scope.members;
+  const active_users = Math.round(enrolled * ACTIVE_RATE);
+  const active_last_7d = Math.round(enrolled * ACTIVE_7D_RATE);
+  const total_minutes = active_users * AVG_ACTIVE_MEMBER_MINUTES;
+  const total_workouts = Math.round(enrolled * WORKOUTS_PER_ENROLLED);
+  const engagement_rate_pct = enrolled > 0 ? Math.round((active_users / enrolled) * 100) : 0;
+  const seat_limit = Math.max(enrolled, Math.round(enrolled * SEAT_RATIO));
+  const paired = Math.round(enrolled * PAIRED_RATE);
+
+  return {
+    found: true,
+    suppressed: false,
+    campaign_id: "DEMO_SURREY_FALLS_2026",
+    trust_name: scope.label,
+    service_name: "Falls Prevention Programme",
+    enrolled,
+    seat_limit,
+    seats_remaining: seat_limit - enrolled,
+    active_users,
+    engagement_rate_pct,
+    active_last_7d,
+    total_minutes,
+    total_workouts,
+    best_streak: Math.min(31, Math.max(4, Math.round(31 * (0.55 + 0.45 * (enrolled / TOTAL_MEMBERS))))),
+    top_member_minutes: Math.min(712, total_minutes),
+    highest_weekly_minutes: Math.min(158, total_minutes),
+    avg_active_member_minutes: AVG_ACTIVE_MEMBER_MINUTES,
+    avg_minutes_per_active_week: 47,
+    avg_sessions_per_active_week: 4,
+    age: AGE_DIST.map((a) => ({ label: a.label, pct: a.pct, n: Math.round((a.pct / 100) * enrolled) })),
+    sex: SEX_DIST.map((s) => ({ label: s.label, pct: s.pct, n: Math.round((s.pct / 100) * enrolled) })),
+    outcomes:
+      paired >= MIN_MEMBERS
+        ? {
+            suppressed: false,
+            paired_members: paired,
+            sit_to_stand: { uplift_pct: 42, maintained_pct: 88 },
+            balance: { uplift_pct: 24, maintained_pct: 82 },
+            confidence: { uplift_pct: 18, maintained_pct: 90 },
+            falls: { change_pct: -32, reduced_pct: 80 },
+          }
+        : { suppressed: true, paired_members: paired },
+  };
+}
+
 export default function SurreyDashboardClient({ fontClassName }: { fontClassName: string }) {
+  const [level, setLevel] = useState<Level>({ view: "overview" });
+  const scope = getScope(level);
+  const stats = buildStats(scope);
+
   return (
     <main className={[fontClassName, "min-h-screen bg-[#A6D5CE] text-[#25303B]"].join(" ")}>
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
@@ -107,8 +169,20 @@ export default function SurreyDashboardClient({ fontClassName }: { fontClassName
         </div>
 
         <div className="space-y-6">
-          <LocationExplorer />
-          <Dashboard stats={DEMO_STATS} />
+          <LocationExplorer level={level} scope={scope} onNavigate={setLevel} />
+
+          {scope.members < MIN_MEMBERS ? (
+            <div className="rounded-2xl border border-black/10 bg-[#F9F5EF] p-6 shadow-xl ring-1 ring-black/5">
+              <div className="text-sm font-extrabold">Not enough members to show this area</div>
+              <div className="mt-1 text-sm text-[#25303B]/80">
+                To protect individual privacy, cohort statistics only appear once at least{" "}
+                {MIN_MEMBERS} members are enrolled in the selected area. {scope.label} currently has{" "}
+                {scope.members}. Step back up a level to widen the filter.
+              </div>
+            </div>
+          ) : (
+            <Dashboard stats={stats} />
+          )}
         </div>
 
         <footer className="mt-6 text-xs text-[#25303B]/70">
@@ -121,43 +195,58 @@ export default function SurreyDashboardClient({ fontClassName }: { fontClassName
   );
 }
 
-function LocationExplorer() {
-  const [level, setLevel] = useState<Level>({ view: "overview" });
-
-  const overviewData = useMemo(
-    () =>
-      SURREY_GEO.map((r) => {
-        const n = regionTotal(r);
-        return { label: r.region, n, pct: pct(n, TOTAL_MEMBERS) };
-      }),
-    []
-  );
+function LocationExplorer({
+  level,
+  scope,
+  onNavigate,
+}: {
+  level: Level;
+  scope: Scope;
+  onNavigate: (l: Level) => void;
+}) {
+  const overviewData = SURREY_GEO.map((r) => {
+    const n = regionTotal(r);
+    return { label: r.region, n, pct: pct(n, TOTAL_MEMBERS) };
+  });
 
   return (
     <section className="rounded-2xl bg-[#F9F5EF] p-6 shadow-xl ring-1 ring-black/5">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="text-sm font-extrabold">📍 Where members are based</div>
-          <Breadcrumbs level={level} onNavigate={setLevel} />
+      <div className="flex flex-col gap-1">
+        <div className="text-sm font-extrabold">📍 Where members are based — filter the dashboard</div>
+        <p className="text-xs text-[#25303B]/70">
+          Click a segment to <span className="font-bold">narrow</span> everything below to that area,
+          all the way down to a single town. Use the breadcrumbs or <span className="font-bold">Back</span>{" "}
+          to <span className="font-bold">widen</span> again.
+        </p>
+        <Breadcrumbs level={level} onNavigate={onNavigate} />
+      </div>
+
+      {/* Active-filter banner */}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#25303B]/15 bg-[#25303B]/[0.04] px-4 py-3">
+        <div className="text-sm">
+          <span className="font-semibold text-[#25303B]/70">Filtering dashboard by: </span>
+          <span className="font-extrabold">{scope.label}</span>
+          <span className="ml-2 rounded-full bg-[#25303B] px-2 py-0.5 text-xs font-bold text-[#F9F5EF]">
+            {formatNumber(scope.members)} members
+          </span>
         </div>
-        <div className="text-xs font-semibold text-[#25303B]/60">
-          {formatNumber(TOTAL_MEMBERS)} members across Surrey
-        </div>
+        {level.view !== "overview" && (
+          <button
+            onClick={() => onNavigate({ view: "overview" })}
+            className="text-xs font-bold text-[#25303B]/70 underline underline-offset-2 transition hover:text-[#25303B]"
+          >
+            Clear filter (show all Surrey)
+          </button>
+        )}
       </div>
 
       {level.view !== "overview" && (
         <button
-          onClick={() =>
-            setLevel(
-              level.view === "borough"
-                ? { view: "region", region: level.region }
-                : { view: "overview" }
-            )
-          }
+          onClick={() => onNavigate(parentLevel(level))}
           className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white/70 px-3 py-1.5 text-xs font-bold text-[#25303B] shadow-sm transition hover:bg-white"
         >
           <span aria-hidden>←</span>
-          {level.view === "borough" ? `Back to ${level.region}` : "Back to Surrey overview"}
+          {backLabel(level)}
         </button>
       )}
 
@@ -165,23 +254,43 @@ function LocationExplorer() {
         {level.view === "overview" && (
           <OverviewView
             data={overviewData}
-            onSelect={(region) => setLevel({ view: "region", region })}
+            onSelect={(region) => onNavigate({ view: "region", region })}
           />
         )}
 
         {level.view === "region" && (
           <RegionView
             region={level.region}
-            onSelect={(borough) => setLevel({ view: "borough", region: level.region, borough })}
+            onSelect={(borough) => onNavigate({ view: "borough", region: level.region, borough })}
           />
         )}
 
         {level.view === "borough" && (
-          <BoroughView region={level.region} borough={level.borough} />
+          <BoroughView
+            region={level.region}
+            borough={level.borough}
+            onSelect={(town) =>
+              onNavigate({ view: "town", region: level.region, borough: level.borough, town })
+            }
+          />
         )}
+
+        {level.view === "town" && <TownView town={level.town} borough={level.borough} />}
       </div>
     </section>
   );
+}
+
+function parentLevel(level: Level): Level {
+  if (level.view === "town") return { view: "borough", region: level.region, borough: level.borough };
+  if (level.view === "borough") return { view: "region", region: level.region };
+  return { view: "overview" };
+}
+
+function backLabel(level: Level): string {
+  if (level.view === "town") return `Back to ${level.borough}`;
+  if (level.view === "borough") return `Back to ${level.region}`;
+  return "Back to Surrey overview";
 }
 
 function Breadcrumbs({
@@ -193,30 +302,53 @@ function Breadcrumbs({
 }) {
   const crumbClass =
     "text-xs font-semibold text-[#25303B]/80 underline decoration-[#25303B]/30 underline-offset-2 transition hover:text-[#25303B] hover:decoration-[#25303B]";
+  const region = level.view !== "overview" ? level.region : null;
+  const borough = level.view === "borough" || level.view === "town" ? level.borough : null;
+  const town = level.view === "town" ? level.town : null;
+
   return (
-    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[#25303B]/40">
-      <button className={crumbClass} onClick={() => onNavigate({ view: "overview" })}>
-        Surrey overview
-      </button>
-      {level.view !== "overview" && (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-[#25303B]/40">
+      {level.view === "overview" ? (
+        <span className="text-xs font-bold text-[#25303B]">Surrey overview</span>
+      ) : (
+        <button className={crumbClass} onClick={() => onNavigate({ view: "overview" })}>
+          Surrey overview
+        </button>
+      )}
+
+      {region && (
         <>
           <span>›</span>
-          {level.view === "borough" ? (
-            <button
-              className={crumbClass}
-              onClick={() => onNavigate({ view: "region", region: level.region })}
-            >
-              {level.region}
-            </button>
+          {level.view === "region" ? (
+            <span className="text-xs font-bold text-[#25303B]">{region}</span>
           ) : (
-            <span className="text-xs font-bold text-[#25303B]">{level.region}</span>
+            <button className={crumbClass} onClick={() => onNavigate({ view: "region", region })}>
+              {region}
+            </button>
           )}
         </>
       )}
-      {level.view === "borough" && (
+
+      {borough && (
         <>
           <span>›</span>
-          <span className="text-xs font-bold text-[#25303B]">{level.borough}</span>
+          {level.view === "borough" ? (
+            <span className="text-xs font-bold text-[#25303B]">{borough}</span>
+          ) : (
+            <button
+              className={crumbClass}
+              onClick={() => onNavigate({ view: "borough", region: region as string, borough })}
+            >
+              {borough}
+            </button>
+          )}
+        </>
+      )}
+
+      {town && (
+        <>
+          <span>›</span>
+          <span className="text-xs font-bold text-[#25303B]">{town}</span>
         </>
       )}
     </div>
@@ -267,7 +399,7 @@ function OverviewView({
           <button
             key={r.label}
             onClick={() => onSelect(r.label)}
-            className="flex items-center justify-between gap-6 rounded-xl border border-black/10 bg-white/60 px-4 py-3 text-left shadow-sm transition hover:bg-white"
+            className="flex items-center justify-between gap-6 rounded-xl border border-black/10 bg-white/60 px-4 py-3 text-left shadow-sm transition hover:border-[#25303B]/30 hover:bg-white"
           >
             <span className="flex items-center gap-2">
               <span
@@ -294,7 +426,7 @@ function RegionView({
   region: string;
   onSelect: (borough: string) => void;
 }) {
-  const regionData = SURREY_GEO.find((r) => r.region === region);
+  const regionData = findRegion(region);
   const total = regionData ? regionTotal(regionData) : 0;
   const bars = (regionData?.boroughs ?? [])
     .map((b) => ({ name: b.borough, n: boroughTotal(b) }))
@@ -303,15 +435,24 @@ function RegionView({
   return (
     <div>
       <p className="mb-3 text-xs text-[#25303B]/70">
-        {formatNumber(total)} members in {region}. Select a district to drill into its towns.
+        Districts within <span className="font-bold">{region}</span> — click one to filter the dashboard
+        to that district.
       </p>
-      <DrillBar bars={bars} total={total} onSelect={onSelect} />
+      <DrillBar bars={bars} total={total} onSelect={onSelect} nextLevel="towns" />
     </div>
   );
 }
 
-function BoroughView({ region, borough }: { region: string; borough: string }) {
-  const regionData = SURREY_GEO.find((r) => r.region === region);
+function BoroughView({
+  region,
+  borough,
+  onSelect,
+}: {
+  region: string;
+  borough: string;
+  onSelect: (town: string) => void;
+}) {
+  const regionData = findRegion(region);
   const boroughData = regionData?.boroughs.find((b) => b.borough === borough);
   const total = boroughData ? boroughTotal(boroughData) : 0;
   const bars = (boroughData?.towns ?? [])
@@ -321,9 +462,22 @@ function BoroughView({ region, borough }: { region: string; borough: string }) {
   return (
     <div>
       <p className="mb-3 text-xs text-[#25303B]/70">
-        {formatNumber(total)} members in {borough}, by town.
+        Towns within <span className="font-bold">{borough}</span> — click one to filter the dashboard
+        to that town.
       </p>
-      <DrillBar bars={bars} total={total} />
+      <DrillBar bars={bars} total={total} onSelect={onSelect} nextLevel="town" />
+    </div>
+  );
+}
+
+function TownView({ town, borough }: { town: string; borough: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-black/15 bg-white/50 p-5 text-center">
+      <div className="text-sm font-extrabold">{town}</div>
+      <div className="mt-1 text-xs text-[#25303B]/70">
+        Most detailed level. The dashboard below is now filtered to {town} ({borough}). Use{" "}
+        <span className="font-bold">Back</span> or the breadcrumbs to widen the filter.
+      </div>
     </div>
   );
 }
@@ -332,10 +486,12 @@ function DrillBar({
   bars,
   total,
   onSelect,
+  nextLevel,
 }: {
   bars: { name: string; n: number }[];
   total: number;
   onSelect?: (name: string) => void;
+  nextLevel?: string;
 }) {
   const height = Math.max(200, bars.length * 46);
   return (
@@ -360,9 +516,7 @@ function DrillBar({
           <Bar
             dataKey="n"
             radius={[0, 6, 6, 0]}
-            onClick={(entry) =>
-              onSelect?.((entry as unknown as { name: string }).name)
-            }
+            onClick={(entry) => onSelect?.((entry as unknown as { name: string }).name)}
           >
             {bars.map((b, i) => (
               <Cell
@@ -376,7 +530,7 @@ function DrillBar({
       </ResponsiveContainer>
       {onSelect && (
         <div className="mt-1 text-center text-[11px] font-semibold text-[#25303B]/50">
-          Tip: click a bar to drill into its towns
+          Click a bar to filter to that {nextLevel === "town" ? "town" : "district"}
         </div>
       )}
     </div>
