@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local production baselines (may contain dashboard tokens)
+/.phase0/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
