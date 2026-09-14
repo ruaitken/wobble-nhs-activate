@@ -4,12 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:practice": "node scripts/dev-practice.mjs",
+    "seed:practice-portal": "node scripts/seed-practice-portal-admin.mjs",
+    "seed:practice-participants": "node scripts/seed-practice-participants.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:dashboard-contracts": "node --test tests/dashboard-contracts.mjs"
+    "test:dashboard-contracts": "node --test tests/dashboard-contracts.mjs",
+    "test:portal": "node --test tests/portal-guards.mjs tests/portal-auth.mjs tests/portal-shell.mjs tests/portal-licences.mjs tests/portal-participants.mjs tests/portal-account.mjs tests/portal-invite.mjs"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.90.1",
     "next": "16.1.1",
     "react": "19.2.3",

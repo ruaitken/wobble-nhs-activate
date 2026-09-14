@@ -34,7 +34,8 @@ export default function OrgDashboardClient({
     async function run() {
       try {
         const res = await fetch(
-          `/api/dashboard/org?token=${encodeURIComponent(token)}`
+          `/api/dashboard/org?token=${encodeURIComponent(token)}`,
+          { signal: AbortSignal.timeout(12_000) }
         );
         const json = (await res.json()) as ApiResponse;
         setData(json);
@@ -93,7 +94,7 @@ export default function OrgDashboardClient({
           <div className="rounded-2xl border border-[#E58B66]/40 bg-[#E58B66]/10 p-6">
             <div className="text-sm font-bold">This dashboard link can’t be opened</div>
             <div className="mt-1 text-sm text-[#25303B]/80">
-              Please check the link is correct, or contact your Wobble team.
+              Please refresh and try again, or check the link is correct.
             </div>
           </div>
         )}

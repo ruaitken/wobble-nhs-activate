@@ -60,13 +60,24 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
 
       try {
         const res = await fetch(
-          `/api/nhs/validate?campaign_id=${encodeURIComponent(campaignId)}`
+          `/api/nhs/validate?campaign_id=${encodeURIComponent(campaignId)}`,
+          { signal: AbortSignal.timeout(12_000) }
         );
         const json = (await res.json()) as ApiResponse;
         setData(json);
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : String(e);
-        setData({ ok: false, reason: "network_error", error: message });
+        const timedOut =
+          (e instanceof DOMException && e.name === "TimeoutError") ||
+          message.toLowerCase().includes("abort") ||
+          message.toLowerCase().includes("timeout");
+        setData({
+          ok: false,
+          reason: timedOut ? "link_check_timed_out" : "network_error",
+          error: timedOut
+            ? "The campaign check took too long. Please refresh and try again."
+            : message,
+        });
       } finally {
         setLoading(false);
       }

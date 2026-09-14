@@ -38,3 +38,4 @@ Dashboard tokens are obvious practice values such as
   excluded from Git.
 - Later portal tables will be added here first, then copied to production
   as reviewed additive migrations.
+- Phase 2B added those tables locally. See `docs/phase-2b-portal-tables.md`.
