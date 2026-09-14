@@ -7,6 +7,7 @@
     "dev:practice": "node scripts/dev-practice.mjs",
     "seed:practice-portal": "node scripts/seed-practice-portal-admin.mjs",
     "seed:practice-participants": "node scripts/seed-practice-participants.mjs",
+    "smtp:practice": "node scripts/apply-practice-smtp.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

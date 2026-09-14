@@ -71,6 +71,44 @@ test("expired invitations release the reserved seat", () => {
   );
 });
 
+test("information packs can send through Resend without touching live activate", () => {
+  const source = readFileSync(
+    path.join(process.cwd(), "lib/portal/inviteEmail.ts"),
+    "utf8"
+  );
+  const nhs = readFileSync(
+    path.join(process.cwd(), "app/api/nhs/activate/route.ts"),
+    "utf8"
+  );
+  assert.ok(source.includes("https://api.resend.com/emails"));
+  assert.ok(source.includes("enquiries@wobblebalance.com"));
+  assert.ok(source.includes("PORTAL_USE_RESEND"));
+  assert.ok(source.includes("mailpitUrl"));
+  assert.ok(source.includes("Your place is ready"));
+  assert.ok(source.includes("Activate your Wobble place"));
+  assert.ok(source.includes("apps.apple.com"));
+  assert.ok(source.includes("#A6D5CE"));
+  assert.ok(nhs.includes("nhs-activate"));
+  assert.ok(!nhs.includes("resend.com"));
+});
+
+test("practice magic links can use Resend SMTP without a committed key", () => {
+  const smtp = readFileSync(
+    path.join(process.cwd(), "scripts/apply-practice-smtp.mjs"),
+    "utf8"
+  );
+  const template = readFileSync(
+    path.join(process.cwd(), "supabase/templates/magic_link.html"),
+    "utf8"
+  );
+  assert.ok(smtp.includes("smtp.resend.com"));
+  assert.ok(smtp.includes('pass = "env(RESEND_API_KEY)"'));
+  assert.ok(smtp.includes("enquiries@wobblebalance.com"));
+  assert.ok(!smtp.includes("re_"));
+  assert.ok(template.includes("Sign in to the portal"));
+  assert.ok(template.includes("{{ .TokenHash }}"));
+});
+
 test("invitation lists page 10 at a time after searching everyone", () => {
   const source = readFileSync(
     path.join(process.cwd(), "app/portal/LicenceManager.tsx"),

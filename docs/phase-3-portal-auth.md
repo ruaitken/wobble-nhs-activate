@@ -46,8 +46,10 @@ sign-in-link change; old emails still use the previous URL.
 
 Practice admin: `practice-admin@example.com`
 
-The sign-in email is caught by the local mail inbox at
-[http://127.0.0.1:54324](http://127.0.0.1:54324).
+Until practice SMTP is applied, the sign-in email is caught by Mailpit at
+[http://127.0.0.1:54324](http://127.0.0.1:54324). After
+`npm run smtp:practice`, magic links go through Resend instead. See
+`docs/phase-11-resend.md`.
 
 `npm run dev` still uses `.env.local` (production keys). Prefer
 `dev:practice` for portal login so magic links are not sent from the live
