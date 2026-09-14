@@ -1,9 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { AccountMember } from "@/lib/portal/account";
 import { PORTAL_LOGIN_PATH } from "@/lib/portal/paths";
+import { matchesSearch, slicePage } from "@/lib/portal/listPaging";
+import ListPager from "@/app/portal/ListPager";
 
 const ERRORS: Record<string, string> = {
   invalid_email: "Enter a valid email address.",
@@ -47,6 +49,8 @@ export default function AccountManager({
   const [members, setMembers] = useState(initialMembers);
   const [email, setEmail] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
   const [role, setRole] = useState<"customer_admin" | "viewer">("viewer");
   const [submitting, setSubmitting] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -83,6 +87,7 @@ export default function AccountManager({
       setEmail("");
       setConfirmEmail("");
       setRole("viewer");
+      setPage(1);
       setMessage(body.message ?? "Invitation sent.");
     } catch {
       setError("We could not invite that person.");
@@ -125,8 +130,14 @@ export default function AccountManager({
     }
   }
 
+  const filteredMembers = useMemo(
+    () => members.filter((member) => matchesSearch(member.email, query)),
+    [members, query]
+  );
+  const pagedMembers = slicePage(filteredMembers, page);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 rounded-2xl bg-[#F9F5EF] p-6 shadow-xl ring-1 ring-black/5 sm:p-8">
       <div>
         <h3 className="text-lg font-bold">People</h3>
         <p className="mt-2 text-sm text-[#25303B]/80">
@@ -210,52 +221,81 @@ export default function AccountManager({
       ) : null}
 
       <div>
-        <h4 className="text-sm font-extrabold uppercase tracking-wide text-[#25303B]/70">
-          Organisation access
-        </h4>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <h4 className="text-sm font-extrabold uppercase tracking-wide text-[#25303B]/70">
+            Organisation access
+          </h4>
+          {members.length > 0 && (
+            <label className="relative block sm:w-72">
+              <span className="sr-only">Search people</span>
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search email"
+                className="w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm outline-none ring-[#A6D5CE] focus:ring-2"
+              />
+            </label>
+          )}
+        </div>
         {members.length === 0 ? (
           <p className="mt-2 text-sm text-[#25303B]/80">
             Nobody has been invited to this organisation yet.
           </p>
+        ) : filteredMembers.length === 0 ? (
+          <p className="mt-2 text-sm text-[#25303B]/80">
+            No people match that search.
+          </p>
         ) : (
-          <ul className="mt-3 divide-y divide-black/10">
-            {members.map((member) => (
-              <li
-                key={member.user_id}
-                className="flex items-center justify-between gap-4 py-3 text-sm"
-              >
-                <div>
-                  <div className="font-semibold">
-                    {member.email}
-                    {member.user_id === currentUserId ? " (you)" : ""}
-                  </div>
-                  <div className="text-xs text-[#25303B]/70">
-                    {roleLabel(member.role)} · added {formatDate(member.created_at)}
-                  </div>
-                </div>
-                {canManage ? (
-                  member.can_remove ? (
-                    <button
-                      type="button"
-                      onClick={() => handleRemove(member.user_id)}
-                      disabled={removingId === member.user_id}
-                      className="shrink-0 rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
-                    >
-                      {removingId === member.user_id ? "Removing…" : "Remove"}
-                    </button>
-                  ) : (
-                    <div className="shrink-0 text-xs text-[#25303B]/60">
-                      Last administrator
+          <div className="mt-3 overflow-hidden rounded-xl ring-1 ring-black/10">
+            <ul className="divide-y divide-black/10">
+              {pagedMembers.items.map((member) => (
+                <li
+                  key={member.user_id}
+                  className="flex items-center justify-between gap-4 px-4 py-3 text-sm"
+                >
+                  <div>
+                    <div className="font-semibold">
+                      {member.email}
+                      {member.user_id === currentUserId ? " (you)" : ""}
                     </div>
-                  )
-                ) : (
-                  <div className="shrink-0 text-xs font-semibold">
-                    {roleLabel(member.role)}
+                    <div className="text-xs text-[#25303B]/70">
+                      {roleLabel(member.role)} · added {formatDate(member.created_at)}
+                    </div>
                   </div>
-                )}
-              </li>
-            ))}
-          </ul>
+                  {canManage ? (
+                    member.can_remove ? (
+                      <button
+                        type="button"
+                        onClick={() => handleRemove(member.user_id)}
+                        disabled={removingId === member.user_id}
+                        className="shrink-0 rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
+                      >
+                        {removingId === member.user_id ? "Removing…" : "Remove"}
+                      </button>
+                    ) : (
+                      <div className="shrink-0 text-xs text-[#25303B]/60">
+                        Last administrator
+                      </div>
+                    )
+                  ) : (
+                    <div className="shrink-0 text-xs font-semibold">
+                      {roleLabel(member.role)}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <ListPager
+              total={filteredMembers.length}
+              page={pagedMembers.currentPage}
+              noun="people"
+              onPageChange={setPage}
+            />
+          </div>
         )}
       </div>
     </div>

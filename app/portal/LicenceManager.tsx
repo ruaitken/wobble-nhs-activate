@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { LicenceSnapshot } from "@/lib/portal/licenceMath";
+import { matchesSearch, slicePage } from "@/lib/portal/listPaging";
+import ListPager from "@/app/portal/ListPager";
 
 const ERRORS: Record<string, string> = {
   emails_do_not_match: "The two email addresses must match.",
@@ -48,9 +50,20 @@ export default function LicenceManager({
   const [snapshot, setSnapshot] = useState(initial);
   const [email, setEmail] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const filteredInvitations = useMemo(
+    () =>
+      snapshot.invitations.filter((invitation) =>
+        matchesSearch(invitation.invited_email, query)
+      ),
+    [query, snapshot.invitations]
+  );
+  const pagedInvitations = slicePage(filteredInvitations, page);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -80,6 +93,7 @@ export default function LicenceManager({
       setSnapshot(body);
       setEmail("");
       setConfirmEmail("");
+      setPage(1);
       setMessage(
         `Invitation sent successfully. ${body.issued} of ${body.seat_limit} licences issued.`
       );
@@ -91,7 +105,7 @@ export default function LicenceManager({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 rounded-2xl bg-[#F9F5EF] p-6 shadow-xl ring-1 ring-black/5 sm:p-8">
       <div>
         <h3 className="text-lg font-bold">Licences</h3>
         <p className="mt-2 text-sm text-[#25303B]/80">
@@ -155,35 +169,64 @@ export default function LicenceManager({
       )}
 
       <div>
-        <h4 className="text-sm font-extrabold uppercase tracking-wide text-[#25303B]/70">
-          Invitations
-        </h4>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <h4 className="text-sm font-extrabold uppercase tracking-wide text-[#25303B]/70">
+            Invitations
+          </h4>
+          {snapshot.invitations.length > 0 && (
+            <label className="relative block sm:w-72">
+              <span className="sr-only">Search invitations</span>
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search email"
+                className="w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm outline-none ring-[#A6D5CE] focus:ring-2"
+              />
+            </label>
+          )}
+        </div>
         {snapshot.invitations.length === 0 ? (
           <p className="mt-2 text-sm text-[#25303B]/80">
             No information packs have been sent for this period yet.
           </p>
+        ) : filteredInvitations.length === 0 ? (
+          <p className="mt-2 text-sm text-[#25303B]/80">
+            No invitations match that search.
+          </p>
         ) : (
-          <ul className="mt-3 divide-y divide-black/10">
-            {snapshot.invitations.map((invitation) => (
-              <li
-                key={invitation.id}
-                className="flex items-center justify-between gap-4 py-3 text-sm"
-              >
-                <div>
-                  <div className="font-semibold">{invitation.invited_email}</div>
-                  <div className="text-xs text-[#25303B]/70">
-                    Sent {formatDate(invitation.sent_at)}
-                    {invitation.status === "pending"
-                      ? ` · expires ${formatDate(invitation.expires_at)}`
-                      : ""}
+          <div className="mt-3 overflow-hidden rounded-xl ring-1 ring-black/10">
+            <ul className="divide-y divide-black/10">
+              {pagedInvitations.items.map((invitation) => (
+                <li
+                  key={invitation.id}
+                  className="flex items-center justify-between gap-4 px-4 py-3 text-sm"
+                >
+                  <div>
+                    <div className="font-semibold">{invitation.invited_email}</div>
+                    <div className="text-xs text-[#25303B]/70">
+                      Sent {formatDate(invitation.sent_at)}
+                      {invitation.status === "pending"
+                        ? ` · expires ${formatDate(invitation.expires_at)}`
+                        : ""}
+                    </div>
                   </div>
-                </div>
-                <div className="shrink-0 text-xs font-semibold">
-                  {statusLabel(invitation.status)}
-                </div>
-              </li>
-            ))}
-          </ul>
+                  <div className="shrink-0 text-xs font-semibold">
+                    {statusLabel(invitation.status)}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <ListPager
+              total={filteredInvitations.length}
+              page={pagedInvitations.currentPage}
+              noun="invitations"
+              onPageChange={setPage}
+            />
+          </div>
         )}
       </div>
     </div>

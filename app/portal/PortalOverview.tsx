@@ -13,33 +13,35 @@ export default function PortalOverview({
 }) {
   if (!stats || !stats.found) {
     return (
-      <div>
-        <h3 className="text-lg font-bold">Overview</h3>
-        <p className="mt-2 text-sm text-[#25303B]/80">
-          This programme could not be loaded.
-        </p>
+      <div className="rounded-2xl border border-[#E58B66]/40 bg-[#E58B66]/10 p-6">
+        <div className="text-sm font-bold">This programme could not be loaded</div>
+        <div className="mt-1 text-sm text-[#25303B]/80">
+          Please refresh and try again.
+        </div>
       </div>
     );
   }
 
   if (stats.suppressed) {
     return (
-      <div>
-        <h3 className="text-lg font-bold">Overview</h3>
-        <p className="mt-2 text-sm text-[#25303B]/80">
-          To protect individual privacy, cohort statistics appear once at least
-          5 members have enrolled. Currently enrolled: {stats.enrolled}.
-        </p>
+      <div className="rounded-2xl border border-black/10 bg-[#F9F5EF] p-6 shadow-xl ring-1 ring-black/5">
+        <div className="text-sm font-extrabold">Not enough members yet</div>
+        <div className="mt-1 text-sm text-[#25303B]/80">
+          To protect individual privacy, we only show cohort statistics once at
+          least 5 members have enrolled. Currently enrolled: {stats.enrolled}.
+        </div>
       </div>
     );
   }
 
   return (
     <div>
-      <p className="mb-4 text-xs text-[#25303B]/70">
-        Aggregated and anonymised. No names or emails are shown.
-      </p>
       <PortalDashboard stats={stats as never} />
+      <p className="mt-6 text-xs text-[#25303B]/70">
+        All information displayed here is aggregated and anonymised. Outcome
+        measures are only shown where sufficient participant numbers exist to
+        protect individual privacy. No names or emails are shown.
+      </p>
     </div>
   );
 }

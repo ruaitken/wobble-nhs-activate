@@ -40,6 +40,7 @@ export default function InviteActivateClient({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [appAccess, setAppAccess] = useState<"granted" | "pending" | null>(null);
 
   useEffect(() => {
     async function run() {
@@ -115,7 +116,11 @@ export default function InviteActivateClient({
           consented: invite.ask_consent ? consentChoice === "yes" : undefined,
         }),
       });
-      const body = (await response.json()) as { ok?: boolean; reason?: string };
+      const body = (await response.json()) as {
+        ok?: boolean;
+        reason?: string;
+        app_access?: "granted" | "pending";
+      };
       if (!response.ok || !body.ok) {
         if (body.reason === "email_mismatch") {
           setError("This invitation can only be activated with the invited email address.");
@@ -136,6 +141,7 @@ export default function InviteActivateClient({
         setError("We could not activate this place. Please try again.");
         return;
       }
+      setAppAccess(body.app_access === "pending" ? "pending" : "granted");
       setSuccess(true);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Something went wrong.");
@@ -212,10 +218,14 @@ export default function InviteActivateClient({
               {success ? (
                 <div className="rounded-xl border border-[#E7B450]/50 bg-[#E7B450]/15 p-4">
                   <div className="text-sm font-extrabold">
-                    Account activated — you now have access to Wobble.
+                    {appAccess === "pending"
+                      ? "Your place is reserved"
+                      : "Account activated — you now have access to Wobble."}
                   </div>
                   <p className="mt-2 text-sm text-[#25303B]/80">
-                    Download the app and sign in with {invite.invited_email}.
+                    {appAccess === "pending"
+                      ? "Download the app and sign in with this email shortly. App access is being finished."
+                      : `Download the app and sign in with ${invite.invited_email}.`}
                   </p>
                   <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                     <a

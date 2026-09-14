@@ -9,5 +9,9 @@ const montserrat = Montserrat({
 });
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
-  return <div className={montserrat.className}>{children}</div>;
+  return (
+    <div className={`${montserrat.className} min-h-screen bg-[#A6D5CE] text-[#25303B]`}>
+      {children}
+    </div>
+  );
 }

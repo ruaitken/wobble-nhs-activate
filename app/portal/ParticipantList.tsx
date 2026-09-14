@@ -11,8 +11,8 @@ import {
   type ParticipantSnapshot,
   type PortalParticipant,
 } from "@/lib/portal/participantView";
-
-const PARTICIPANTS_PER_PAGE = 10;
+import { matchesSearch, slicePage } from "@/lib/portal/listPaging";
+import ListPager from "@/app/portal/ListPager";
 
 export default function ParticipantList({
   snapshot,
@@ -23,12 +23,11 @@ export default function ParticipantList({
   const [selectedId, setSelectedId] = useState(snapshot.participants[0]?.id ?? "");
 
   const filtered = useMemo(() => {
-    const search = query.trim().toLowerCase();
-    if (!search) return snapshot.participants;
     return snapshot.participants.filter((person) =>
-      `${person.first_name} ${person.last_name} ${person.id}`
-        .toLowerCase()
-        .includes(search)
+      matchesSearch(
+        `${person.first_name} ${person.last_name} ${person.id}`,
+        query
+      )
     );
   }, [query, snapshot.participants]);
 
@@ -37,17 +36,14 @@ export default function ParticipantList({
 
   function handleQueryChange(value: string) {
     setQuery(value);
-    const search = value.trim().toLowerCase();
     const firstMatch = snapshot.participants.find((person) =>
-      `${person.first_name} ${person.last_name} ${person.id}`
-        .toLowerCase()
-        .includes(search)
+      matchesSearch(`${person.first_name} ${person.last_name} ${person.id}`, value)
     );
     if (firstMatch) setSelectedId(firstMatch.id);
   }
 
   return (
-    <div className="-mx-6 -mb-6 space-y-6 sm:-mx-8 sm:-mb-8">
+    <div className="space-y-6">
       <p className="px-6 text-sm text-[#25303B]/80 sm:px-8">
         Showing {snapshot.shown} {snapshot.shown === 1 ? "person" : "people"} who
         consented to named reporting.
@@ -81,17 +77,12 @@ function ParticipantTable({
   onSelect: (id: string) => void;
 }) {
   const [page, setPage] = useState(1);
-  const pageCount = Math.max(1, Math.ceil(participants.length / PARTICIPANTS_PER_PAGE));
-  const currentPage = Math.min(page, pageCount);
-  const visible = participants.slice(
-    (currentPage - 1) * PARTICIPANTS_PER_PAGE,
-    currentPage * PARTICIPANTS_PER_PAGE
-  );
+  const { currentPage, items: visible } = slicePage(participants, page);
 
   function changePage(nextPage: number) {
-    const safePage = Math.min(Math.max(nextPage, 1), pageCount);
-    setPage(safePage);
-    const first = participants[(safePage - 1) * PARTICIPANTS_PER_PAGE];
+    const next = slicePage(participants, nextPage);
+    setPage(next.currentPage);
+    const first = next.items[0];
     if (first) onSelect(first.id);
   }
 
@@ -201,36 +192,12 @@ function ParticipantTable({
         )}
       </div>
       {participants.length > 0 && (
-        <div className="flex flex-col gap-3 border-t border-black/10 px-5 py-4 text-sm sm:flex-row sm:items-center sm:justify-between">
-          <span className="text-xs text-[#25303B]/60">
-            Showing {(currentPage - 1) * PARTICIPANTS_PER_PAGE + 1}–
-            {Math.min(currentPage * PARTICIPANTS_PER_PAGE, participants.length)} of{" "}
-            {participants.length} participants
-          </span>
-          {pageCount > 1 && (
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => changePage(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="rounded-lg bg-white px-3 py-2 text-xs font-extrabold ring-1 ring-black/10 transition hover:bg-[#A6D5CE]/20 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Previous
-              </button>
-              <span className="px-2 text-xs font-bold text-[#25303B]/65">
-                Page {currentPage} of {pageCount}
-              </span>
-              <button
-                type="button"
-                onClick={() => changePage(currentPage + 1)}
-                disabled={currentPage === pageCount}
-                className="rounded-lg bg-white px-3 py-2 text-xs font-extrabold ring-1 ring-black/10 transition hover:bg-[#A6D5CE]/20 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </div>
+        <ListPager
+          total={participants.length}
+          page={currentPage}
+          noun="participants"
+          onPageChange={changePage}
+        />
       )}
     </section>
   );

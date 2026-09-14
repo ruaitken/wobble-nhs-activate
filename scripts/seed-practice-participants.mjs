@@ -55,6 +55,38 @@ const MEMBERS = [
   { email: "practice-member-24@example.com", first: "Jules", last: "Frost", age: "77-79", gender: "Male", campaign: "PRACTICE_FALLS_2025", minutes: 0, streak: 0, paired: false, consent: null },
 ];
 
+const EXTRA_FALLS_NAMES = [
+  ["Noah", "Cole"],
+  ["Mia", "Hart"],
+  ["Leo", "Nash"],
+  ["Eva", "Quinn"],
+  ["Owen", "Blythe"],
+  ["Ivy", "Shore"],
+  ["Hugo", "Penn"],
+  ["Ruby", "Vale"],
+  ["Theo", "Marsh"],
+  ["Lila", "Croft"],
+  ["Arlo", "Beech"],
+  ["Nina", "Frost"],
+  ["Jude", "Hale"],
+  ["Cora", "Wynn"],
+];
+
+for (const [index, [first, last]] of EXTRA_FALLS_NAMES.entries()) {
+  MEMBERS.push({
+    email: `practice-member-${String(25 + index).padStart(2, "0")}@example.com`,
+    first,
+    last,
+    age: index % 2 ? "70-72" : "64-66",
+    gender: index % 2 ? "Male" : "Female",
+    campaign: "PRACTICE_FALLS_2026",
+    minutes: 110 + index * 12,
+    streak: 2 + (index % 9),
+    paired: index % 3 === 0,
+    consent: true,
+  });
+}
+
 async function rest(path, { method = "GET", body, prefer } = {}) {
   const response = await fetch(`${env.API_URL}/rest/v1/${path}`, {
     method,
@@ -230,3 +262,9 @@ const counts = created.reduce((acc, id) => {
 }, {});
 
 console.log("Practice participants ready:", counts);
+
+await rest("nhs_campaigns?id=eq.PRACTICE_FALLS_2026", {
+  method: "PATCH",
+  prefer: "return=minimal",
+  body: { seat_limit: 50 },
+});

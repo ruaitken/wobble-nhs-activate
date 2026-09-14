@@ -75,6 +75,70 @@ test("the invitation page collects name and Premium consent", () => {
   assert.ok(complete.includes("consent_required"));
 });
 
+function isLocalSupabaseUrl(url) {
+  return url.includes("127.0.0.1") || url.includes("localhost");
+}
+
+function classifyAppAccessMode({ url, apiKey, entitlementId }) {
+  if (apiKey && entitlementId) return "live";
+  if (isLocalSupabaseUrl(url)) return "practice";
+  return "unavailable";
+}
+
+test("portal invitations grant app access without changing nhs-activate", () => {
+  const access = readFileSync(
+    path.join(process.cwd(), "lib/portal/appAccess.ts"),
+    "utf8"
+  );
+  const complete = readFileSync(
+    path.join(process.cwd(), "lib/portal/licences.ts"),
+    "utf8"
+  );
+  const nhs = readFileSync(
+    path.join(process.cwd(), "app/api/nhs/activate/route.ts"),
+    "utf8"
+  );
+  const ui = readFileSync(
+    path.join(process.cwd(), "app/invite/InviteActivateClient.tsx"),
+    "utf8"
+  );
+
+  assert.ok(access.includes("grantRevenueCatEntitlement"));
+  assert.ok(access.includes("practice"));
+  assert.ok(complete.includes("grantAppAccess"));
+  assert.ok(complete.includes("pending_grant"));
+  assert.ok(nhs.includes('functions.invoke("nhs-activate"'));
+  assert.ok(!nhs.includes("grantAppAccess"));
+  assert.ok(ui.includes("Your place is reserved"));
+});
+
+test("practice skips live RevenueCat; missing keys on a live host stay pending", () => {
+  assert.equal(
+    classifyAppAccessMode({
+      url: "http://127.0.0.1:54321",
+      apiKey: "",
+      entitlementId: "",
+    }),
+    "practice"
+  );
+  assert.equal(
+    classifyAppAccessMode({
+      url: "https://example.supabase.co",
+      apiKey: "",
+      entitlementId: "",
+    }),
+    "unavailable"
+  );
+  assert.equal(
+    classifyAppAccessMode({
+      url: "https://example.supabase.co",
+      apiKey: "rc_key",
+      entitlementId: "wobble",
+    }),
+    "live"
+  );
+});
+
 test("the live activation page wraps search params in Suspense", () => {
   const page = readFileSync(
     path.join(process.cwd(), "app/activate/page.tsx"),

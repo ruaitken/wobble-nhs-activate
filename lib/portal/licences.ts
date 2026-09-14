@@ -18,6 +18,7 @@ import {
   saveReportingConsent,
 } from "@/lib/portal/inviteProfile";
 import { getProgrammeForOrg } from "@/lib/portal/programmes";
+import { grantAppAccess } from "@/lib/portal/appAccess";
 
 export type { LicenceInvitation, LicenceSnapshot };
 
@@ -107,16 +108,16 @@ async function findAuthUserIdByEmail(email: string) {
   );
 }
 
-async function hasClaim(campaignId: string, userId: string) {
+async function getClaim(campaignId: string, userId: string) {
   const admin = getSupabaseServer();
   const { data, error } = await admin
     .from("nhs_claims")
-    .select("user_id")
+    .select("user_id, status, expires_at")
     .eq("campaign_id", campaignId)
     .eq("user_id", userId)
     .maybeSingle();
   if (error) throw error;
-  return Boolean(data);
+  return data;
 }
 
 export async function getLicenceSnapshot(
@@ -382,18 +383,21 @@ export async function completeInvitation({
     lastName,
   });
 
-  const alreadyClaimed = await hasClaim(invitation.campaign_id, auth.user.id);
-  if (!alreadyClaimed) {
-    const expiresAt = campaign.claim_duration_days
+  const existingClaim = await getClaim(invitation.campaign_id, auth.user.id);
+  const expiresAt = existingClaim?.expires_at
+    ? new Date(existingClaim.expires_at)
+    : campaign.claim_duration_days
       ? new Date(
           Date.now() + campaign.claim_duration_days * 24 * 60 * 60 * 1000
-        ).toISOString()
-      : null;
+        )
+      : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+
+  if (!existingClaim) {
     const { error: claimError } = await admin.from("nhs_claims").insert({
       campaign_id: invitation.campaign_id,
       user_id: auth.user.id,
-      status: "active",
-      expires_at: expiresAt,
+      status: "pending_grant",
+      expires_at: expiresAt.toISOString(),
       first_name: firstName.trim(),
       last_name: lastName.trim(),
     });
@@ -415,6 +419,19 @@ export async function completeInvitation({
         first_name: firstName.trim(),
         last_name: lastName.trim(),
       })
+      .eq("campaign_id", invitation.campaign_id)
+      .eq("user_id", auth.user.id);
+  }
+
+  const appAccess = await grantAppAccess({
+    userId: auth.user.id,
+    campaignId: invitation.campaign_id,
+    expiresAt,
+  });
+  if (appAccess.status === "granted") {
+    await admin
+      .from("nhs_claims")
+      .update({ status: "active" })
       .eq("campaign_id", invitation.campaign_id)
       .eq("user_id", auth.user.id);
   }
@@ -446,6 +463,7 @@ export async function completeInvitation({
     details: {
       invited_email: invitation.invited_email,
       consented: askConsent ? consentChoice : null,
+      app_access: appAccess.status,
     },
   });
 
@@ -453,5 +471,6 @@ export async function completeInvitation({
     campaign_id: invitation.campaign_id,
     programme_name: programme.label,
     invited_email: invitation.invited_email,
+    app_access: appAccess.status,
   };
 }

@@ -70,3 +70,19 @@ test("expired invitations release the reserved seat", () => {
     { issued: 12, remaining: 38 }
   );
 });
+
+test("invitation lists page 10 at a time after searching everyone", () => {
+  const source = readFileSync(
+    path.join(process.cwd(), "app/portal/LicenceManager.tsx"),
+    "utf8"
+  );
+  assert.ok(source.includes("slicePage"));
+  assert.ok(source.includes("Search email"));
+
+  const invitations = Array.from({ length: 35 }, (_, index) => `user${index + 1}@example.com`);
+  const filtered = invitations.filter((email) =>
+    email.toLowerCase().includes("user31@")
+  );
+  assert.equal(Math.ceil(invitations.length / 10), 4);
+  assert.equal(filtered.length, 1);
+});

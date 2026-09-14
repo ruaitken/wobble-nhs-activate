@@ -1,4 +1,3 @@
-import Image from "next/image";
 import SignOutButton from "@/app/portal/SignOutButton";
 import ProgrammeSwitcher from "@/app/portal/ProgrammeSwitcher";
 import type { PortalContext } from "@/lib/portal/context";
@@ -26,21 +25,12 @@ export default function PortalShell({
     <main className="min-h-screen bg-[#A6D5CE] text-[#25303B]">
       <div className="flex min-h-screen">
         <aside className="flex w-64 shrink-0 flex-col border-r border-black/10 bg-[#F9F5EF] px-4 py-5">
-          <div className="flex items-center gap-3">
-            <Image
-              src="/wobble-logo.svg"
-              alt="Wobble"
-              width={36}
-              height={36}
-              className="rounded-lg"
-            />
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wide text-[#25303B]/50">
-                Customer portal
-              </div>
-              <div className="text-sm font-extrabold leading-tight">
-                {membership.org_name}
-              </div>
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-[#25303B]/50">
+              Customer portal
+            </div>
+            <div className="text-sm font-extrabold leading-tight">
+              {membership.org_name}
             </div>
           </div>
 
@@ -77,9 +67,9 @@ export default function PortalShell({
           </div>
         </aside>
 
-        <section className="min-w-0 flex-1 px-6 py-6 sm:px-8">
-          <PortalMainHeader selected={selected} />
-          <div className="rounded-2xl bg-[#F9F5EF] p-6 shadow-sm ring-1 ring-black/5 sm:p-8">
+        <section className="min-w-0 flex-1 px-4 py-10 sm:px-6 sm:py-14">
+          <div className="mx-auto max-w-5xl">
+            <PortalMainHeader selected={selected} />
             {children}
           </div>
         </section>

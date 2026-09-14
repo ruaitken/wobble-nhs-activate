@@ -92,3 +92,24 @@ test("archived programmes cannot issue licences", () => {
   assert.equal(historical.is_current, false);
   assert.equal(falls.can_issue_licences, true);
 });
+
+test("overview sits on the teal page, not inside a cream card", () => {
+  const shell = readFileSync(
+    path.join(process.cwd(), "app/portal/PortalShell.tsx"),
+    "utf8"
+  );
+  const header = readFileSync(
+    path.join(process.cwd(), "app/portal/PortalMainHeader.tsx"),
+    "utf8"
+  );
+  const dashboard = readFileSync(
+    path.join(process.cwd(), "app/dashboard/[token]/DashboardClient.tsx"),
+    "utf8"
+  );
+
+  assert.equal(shell.includes('src="/wobble-logo.svg"'), false);
+  assert.ok(header.includes('src="/wobble-logo.svg"'));
+  assert.ok(header.includes("Wobble impact dashboard"));
+  assert.equal(shell.includes("rounded-2xl bg-[#F9F5EF] p-6"), false);
+  assert.ok(dashboard.includes("bg-[#E7B450]/40"));
+});
