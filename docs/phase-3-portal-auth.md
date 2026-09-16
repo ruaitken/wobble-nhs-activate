@@ -44,7 +44,7 @@ npm run dev:practice
 Open `http://127.0.0.1:3001/portal/login`. Request a new email after any
 sign-in-link change; old emails still use the previous URL.
 
-Practice admin: `practice-admin@example.com`
+Practice admin: `ruaitken@wobblebalance.com` (Wobble administrator; also `practice-admin@example.com` as customer administrator)
 
 Until practice SMTP is applied, the sign-in email is caught by Mailpit at
 [http://127.0.0.1:54324](http://127.0.0.1:54324). After

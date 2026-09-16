@@ -1,5 +1,6 @@
 export const PORTAL_HOME_PATH = "/portal";
 export const PORTAL_LOGIN_PATH = "/portal/login";
+export const PORTAL_ADMIN_PATH = "/portal/admin";
 
 export type PortalTab = "overview" | "participants" | "licences" | "account";
 

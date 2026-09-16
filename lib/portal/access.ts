@@ -1,6 +1,7 @@
 import { getPortalSession } from "@/lib/portal/session";
 import { hasOrgAccess } from "@/lib/portal/membership";
 import { getProgrammeForOrg } from "@/lib/portal/programmes";
+import { hasWobbleAdminAccess } from "@/lib/portal/roles";
 import type { PortalSession } from "@/lib/portal/session";
 import type { ProgrammeView } from "@/lib/portal/programmeStatus";
 
@@ -35,6 +36,14 @@ export async function requireProgrammeAccess(
   const programme = await getProgrammeForOrg(orgId, campaignId);
   if (!programme) throw new PortalAccessError(404, "unknown_programme");
   return { session, programme };
+}
+
+export async function requireWobbleAdmin(): Promise<PortalSession> {
+  const session = await requirePortalSession();
+  if (!hasWobbleAdminAccess(session.memberships)) {
+    throw new PortalAccessError(403, "forbidden_role");
+  }
+  return session;
 }
 
 export function jsonError(error: unknown) {

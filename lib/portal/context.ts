@@ -3,11 +3,13 @@ import { getPortalSession } from "@/lib/portal/session";
 import { hasOrgAccess } from "@/lib/portal/membership";
 import { getOrgProgrammes, pickDefaultCampaignId } from "@/lib/portal/programmes";
 import {
+  PORTAL_ADMIN_PATH,
   PORTAL_HOME_PATH,
   PORTAL_LOGIN_PATH,
   programmePath,
   type PortalTab,
 } from "@/lib/portal/paths";
+import { hasWobbleAdminAccess } from "@/lib/portal/roles";
 import type { PortalMembership } from "@/lib/portal/membership";
 import type { PortalSession } from "@/lib/portal/session";
 import type { ProgrammeView } from "@/lib/portal/programmeStatus";
@@ -26,7 +28,11 @@ export async function defaultPortalPath(session: PortalSession) {
   if (!membership) return PORTAL_HOME_PATH;
   const programmes = await getOrgProgrammes(membership.org_id);
   const campaignId = pickDefaultCampaignId(programmes);
-  if (!campaignId) return PORTAL_HOME_PATH;
+  if (!campaignId) {
+    return hasWobbleAdminAccess(session.memberships)
+      ? PORTAL_ADMIN_PATH
+      : PORTAL_HOME_PATH;
+  }
   return programmePath(membership.org_id, campaignId);
 }
 

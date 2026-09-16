@@ -4,6 +4,9 @@ import type { PortalContext } from "@/lib/portal/context";
 import PortalAccountLink from "@/app/portal/PortalAccountLink";
 import PortalMainHeader from "@/app/portal/PortalMainHeader";
 import PortalTabs from "@/app/portal/PortalTabs";
+import Link from "next/link";
+import { PORTAL_ADMIN_PATH } from "@/lib/portal/paths";
+import { hasWobbleAdminAccess } from "@/lib/portal/roles";
 
 export default function PortalShell({
   context,
@@ -58,6 +61,14 @@ export default function PortalShell({
                   : "Viewer"}
             </div>
             <div className="mt-3 flex flex-col gap-2">
+              {hasWobbleAdminAccess(session.memberships) ? (
+                <Link
+                  href={PORTAL_ADMIN_PATH}
+                  className="rounded-lg border border-black/10 bg-white px-3 py-2 text-left text-sm font-semibold hover:bg-white/80"
+                >
+                  Wobble desk
+                </Link>
+              ) : null}
               <PortalAccountLink
                 orgId={membership.org_id}
                 campaignId={selected.campaign_id}

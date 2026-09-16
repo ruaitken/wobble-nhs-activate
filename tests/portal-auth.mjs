@@ -60,6 +60,16 @@ test("portal APIs reject logged-out users", async () => {
 
   const account = await fetchSafely("/api/portal/account?org_id=PRACTICE_ORG");
   assert.equal(account.status, 401);
+
+  const adminOrgs = await fetchSafely("/api/portal/admin/organisations");
+  assert.equal(adminOrgs.status, 401);
+
+  const adminProgrammes = await fetchSafely("/api/portal/admin/programmes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  assert.equal(adminProgrammes.status, 401);
 });
 
 test("a user cannot read another organisation through the portal API", async () => {

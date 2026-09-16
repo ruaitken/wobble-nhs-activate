@@ -20,6 +20,7 @@ for (const line of status.stdout.split("\n")) {
 }
 
 const email = "practice-admin@example.com";
+const realAdminEmail = "ruaitken@wobblebalance.com";
 const viewerEmail = "practice-viewer@example.com";
 const outsiderEmail = "practice-outsider@example.com";
 
@@ -56,6 +57,7 @@ async function upsertUser(serviceUrl, serviceKey, userEmail) {
 }
 
 const adminId = await upsertUser(env.API_URL, env.SERVICE_ROLE_KEY, email);
+const realAdminId = await upsertUser(env.API_URL, env.SERVICE_ROLE_KEY, realAdminEmail);
 const viewerId = await upsertUser(env.API_URL, env.SERVICE_ROLE_KEY, viewerEmail);
 await upsertUser(env.API_URL, env.SERVICE_ROLE_KEY, outsiderEmail);
 
@@ -84,8 +86,9 @@ async function upsertMember(userId, role) {
 }
 
 await upsertMember(adminId, "customer_admin");
+await upsertMember(realAdminId, "wobble_admin");
 await upsertMember(viewerId, "viewer");
 
 console.log(
-  "Practice portal users ready: practice-admin@example.com (admin), practice-viewer@example.com (viewer), practice-outsider@example.com (no org)."
+  "Practice portal users ready: ruaitken@wobblebalance.com (Wobble admin), practice-admin@example.com (admin), practice-viewer@example.com (viewer), practice-outsider@example.com (no org)."
 );

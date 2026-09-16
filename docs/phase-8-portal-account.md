@@ -20,6 +20,7 @@ changed.
 
 Seed with `npm run seed:practice-portal`.
 
+- `ruaitken@wobblebalance.com` — Wobble administrator
 - `practice-admin@example.com` — administrator
 - `practice-viewer@example.com` — viewer
 - `practice-outsider@example.com` — no organisation

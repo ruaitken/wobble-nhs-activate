@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:dashboard-contracts": "node --test tests/dashboard-contracts.mjs",
-    "test:portal": "node --test tests/portal-guards.mjs tests/portal-auth.mjs tests/portal-shell.mjs tests/portal-licences.mjs tests/portal-participants.mjs tests/portal-account.mjs tests/portal-invite.mjs"
+    "test:portal": "node --test tests/portal-guards.mjs tests/portal-auth.mjs tests/portal-shell.mjs tests/portal-licences.mjs tests/portal-participants.mjs tests/portal-account.mjs tests/portal-invite.mjs tests/portal-admin.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
