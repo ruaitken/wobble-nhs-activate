@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { Dashboard, type Stats } from "../[token]/DashboardClient";
+import { matchesSearch, slicePage } from "@/lib/portal/listPaging";
+import ListPager from "@/app/portal/ListPager";
 
 type Tab = "overview" | "participants";
 type Direction = "higher" | "lower";
@@ -28,8 +30,6 @@ type Participant = {
   lastSession: string;
   assessments: Assessment[];
 };
-
-const PARTICIPANTS_PER_PAGE = 10;
 
 const DEMO_STATS: Extract<Stats, { found: true; suppressed: false }> = {
   found: true,
@@ -72,7 +72,7 @@ const DEMO_STATS: Extract<Stats, { found: true; suppressed: false }> = {
   },
 };
 
-const PARTICIPANTS: Participant[] = [
+const NAMED_PARTICIPANTS: Participant[] = [
   {
     id: "DEMO-104",
     firstName: "Anne",
@@ -331,6 +331,83 @@ const PARTICIPANTS: Participant[] = [
   },
 ];
 
+const EXTRA_DEMO_PEOPLE: Array<[string, string]> = [
+  ["Fiona", "Grant"],
+  ["Hugh", "Paterson"],
+  ["Moira", "Scott"],
+  ["Alastair", "Graham"],
+  ["Catriona", "Bell"],
+  ["Iain", "Morrison"],
+  ["Shona", "MacLeod"],
+  ["Ewan", "Hamilton"],
+  ["Morag", "Kerr"],
+  ["Callum", "Duncan"],
+  ["Aileen", "Craig"],
+  ["Gordon", "Wallace"],
+  ["Rona", "Johnston"],
+  ["Niall", "Hughes"],
+  ["Kirsten", "Ross"],
+  ["Hamish", "Sinclair"],
+  ["Eilidh", "Murray"],
+  ["Fraser", "Watt"],
+  ["Isla", "Cameron"],
+];
+
+const PARTICIPANTS: Participant[] = [
+  ...NAMED_PARTICIPANTS,
+  ...EXTRA_DEMO_PEOPLE.map(([firstName, lastName], index) => {
+    const baseline = 7 + (index % 5);
+    return {
+      id: `DEMO-${300 + index}`,
+      firstName,
+      lastName,
+      minutesThisWeek: 10 + ((index * 7) % 50),
+      totalMinutes: 240 + index * 28,
+      averageWeeklyMinutes: 20 + (index % 25),
+      averageSessionsPerWeek: Number((1.4 + (index % 16) / 10).toFixed(1)),
+      lastSession: `${(index % 28) + 1} Aug 2026`,
+      assessments: [
+        {
+          label: "Sit-to-stands",
+          unit: "reps",
+          direction: "higher" as const,
+          baseline,
+          previous: baseline + 1,
+          current: baseline + 2,
+          currentDate: "28 Aug 2026",
+        },
+        {
+          label: "Balance",
+          unit: "seconds",
+          direction: "higher" as const,
+          baseline: 14 + (index % 6),
+          previous: 16 + (index % 6),
+          current: 18 + (index % 6),
+          currentDate: "28 Aug 2026",
+        },
+        {
+          label: "Confidence",
+          unit: "/ 10",
+          direction: "higher" as const,
+          baseline: 4 + (index % 3),
+          previous: 5 + (index % 3),
+          current: 6 + (index % 3),
+          currentDate: "28 Aug 2026",
+        },
+        {
+          label: "Falls",
+          unit: "in 12 months",
+          direction: "lower" as const,
+          baseline: 3,
+          previous: 2,
+          current: 1 + (index % 2),
+          currentDate: "28 Aug 2026",
+        },
+      ],
+    };
+  }),
+];
+
 function percentChange(from: number, to: number) {
   if (from === 0) return null;
   return Math.round(((to - from) / Math.abs(from)) * 100);
@@ -362,12 +439,11 @@ export default function GgcParticipantsDashboard({
   const [selectedId, setSelectedId] = useState(PARTICIPANTS[0].id);
 
   const filteredParticipants = useMemo(() => {
-    const search = query.trim().toLowerCase();
-    if (!search) return PARTICIPANTS;
     return PARTICIPANTS.filter((participant) =>
-      `${participant.firstName} ${participant.lastName} ${participant.id}`
-        .toLowerCase()
-        .includes(search)
+      matchesSearch(
+        `${participant.firstName} ${participant.lastName} ${participant.id}`,
+        query
+      )
     );
   }, [query]);
 
@@ -377,11 +453,11 @@ export default function GgcParticipantsDashboard({
 
   function handleQueryChange(value: string) {
     setQuery(value);
-    const search = value.trim().toLowerCase();
     const firstMatch = PARTICIPANTS.find((participant) =>
-      `${participant.firstName} ${participant.lastName} ${participant.id}`
-        .toLowerCase()
-        .includes(search)
+      matchesSearch(
+        `${participant.firstName} ${participant.lastName} ${participant.id}`,
+        value
+      )
     );
     if (firstMatch) setSelectedId(firstMatch.id);
   }
@@ -509,21 +585,12 @@ function ParticipantList({
   onSelect: (id: string) => void;
 }) {
   const [page, setPage] = useState(1);
-  const pageCount = Math.max(
-    1,
-    Math.ceil(participants.length / PARTICIPANTS_PER_PAGE)
-  );
-  const currentPage = Math.min(page, pageCount);
-  const visibleParticipants = participants.slice(
-    (currentPage - 1) * PARTICIPANTS_PER_PAGE,
-    currentPage * PARTICIPANTS_PER_PAGE
-  );
+  const { currentPage, items: visibleParticipants } = slicePage(participants, page);
 
   function changePage(nextPage: number) {
-    const safePage = Math.min(Math.max(nextPage, 1), pageCount);
-    setPage(safePage);
-    const firstParticipant =
-      participants[(safePage - 1) * PARTICIPANTS_PER_PAGE];
+    const next = slicePage(participants, nextPage);
+    setPage(next.currentPage);
+    const firstParticipant = next.items[0];
     if (firstParticipant) onSelect(firstParticipant.id);
   }
 
@@ -643,39 +710,12 @@ function ParticipantList({
         )}
       </div>
       {participants.length > 0 && (
-        <div className="flex flex-col gap-3 border-t border-black/10 px-5 py-4 text-sm sm:flex-row sm:items-center sm:justify-between">
-          <span className="text-xs text-[#25303B]/60">
-            Showing {(currentPage - 1) * PARTICIPANTS_PER_PAGE + 1}–
-            {Math.min(
-              currentPage * PARTICIPANTS_PER_PAGE,
-              participants.length
-            )}{" "}
-            of {participants.length} participants
-          </span>
-          {pageCount > 1 && (
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => changePage(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="rounded-lg bg-white px-3 py-2 text-xs font-extrabold ring-1 ring-black/10 transition hover:bg-[#A6D5CE]/20 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Previous
-              </button>
-              <span className="px-2 text-xs font-bold text-[#25303B]/65">
-                Page {currentPage} of {pageCount}
-              </span>
-              <button
-                type="button"
-                onClick={() => changePage(currentPage + 1)}
-                disabled={currentPage === pageCount}
-                className="rounded-lg bg-white px-3 py-2 text-xs font-extrabold ring-1 ring-black/10 transition hover:bg-[#A6D5CE]/20 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </div>
+        <ListPager
+          total={participants.length}
+          page={currentPage}
+          noun="participants"
+          onPageChange={changePage}
+        />
       )}
     </section>
   );

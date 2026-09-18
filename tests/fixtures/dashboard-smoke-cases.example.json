@@ -1,0 +1,30 @@
+{
+  "baseUrl": "https://your-production-host.example",
+  "campaigns": [
+    {
+      "label": "Example campaign",
+      "token": "PRIVATE_TOKEN_GOES_IN_IGNORED_COPY_ONLY",
+      "expectedTrust": "Example organisation",
+      "expectedService": "Example service"
+    }
+  ],
+  "organisations": [
+    {
+      "label": "Example grouped organisation",
+      "token": "PRIVATE_TOKEN_GOES_IN_IGNORED_COPY_ONLY",
+      "expectedOrg": "Example organisation",
+      "expectedServices": ["Example service"]
+    }
+  ],
+  "pages": [
+    {
+      "label": "Activation page",
+      "path": "/activate"
+    },
+    {
+      "label": "Impact dashboard demonstration",
+      "path": "/dashboard/demo-wobble-impact-2026",
+      "expectedText": "Demo dashboard"
+    }
+  ]
+}
