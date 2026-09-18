@@ -39,6 +39,8 @@ test("invitation tokens are hashed, never stored raw", () => {
     "utf8"
   );
   assert.ok(source.includes("hashInviteToken"));
+  assert.ok(source.includes("getClaim"));
+  assert.ok(!source.includes("hasClaim"));
   assert.ok(!source.includes("raw_token"));
 });
 

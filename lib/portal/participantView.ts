@@ -38,12 +38,15 @@ type AssessmentRow = {
   created_at: string | null;
 };
 
-export function sumWeeklyMinutes(value: unknown) {
+export function sumWeeklyMinutes(value: unknown): number {
   if (!value || typeof value !== "object") return 0;
-  return Object.values(value as Record<string, unknown>).reduce((sum, minutes) => {
-    const n = Number(minutes);
-    return sum + (Number.isFinite(n) ? n : 0);
-  }, 0);
+  return Object.values(value as Record<string, unknown>).reduce<number>(
+    (sum, minutes) => {
+      const n = Number(minutes);
+      return sum + (Number.isFinite(n) ? n : 0);
+    },
+    0
+  );
 }
 
 export function latestWeekMinutes(value: unknown) {

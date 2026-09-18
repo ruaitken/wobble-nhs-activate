@@ -189,7 +189,7 @@ export async function issueLicence({
   await expireOpenInvitations(campaignId);
 
   const existingUserId = await findAuthUserIdByEmail(invitedEmail);
-  if (existingUserId && (await hasClaim(campaignId, existingUserId))) {
+  if (existingUserId && (await getClaim(campaignId, existingUserId))) {
     throw new LicenceError(409, "already_enrolled");
   }
 
