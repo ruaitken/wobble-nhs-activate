@@ -12,7 +12,7 @@ changed.
 - Invite with email and confirm email
 - Selectable roles are Administrator and Viewer
 - Customers cannot assign the Wobble administrator role
-- Viewers can see who has access, but cannot invite or remove
+- Viewers see Overview only. They cannot open Account, Licences, or Participants
 - The last administrator cannot be removed
 - Removing yourself signs you out
 

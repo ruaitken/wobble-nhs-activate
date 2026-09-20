@@ -95,6 +95,35 @@ test("the example participant dashboard has 35 named people, four pages", () => 
   assert.ok(source.includes("slicePage"));
 });
 
+test("viewers cannot load named participants from the API or nav", () => {
+  const roles = readFileSync(path.join(process.cwd(), "lib/portal/roles.ts"), "utf8");
+  const route = readFileSync(
+    path.join(process.cwd(), "app/api/portal/participants/route.ts"),
+    "utf8"
+  );
+  const shell = readFileSync(
+    path.join(process.cwd(), "app/portal/PortalShell.tsx"),
+    "utf8"
+  );
+  const context = readFileSync(
+    path.join(process.cwd(), "lib/portal/context.ts"),
+    "utf8"
+  );
+  assert.ok(roles.includes("canViewNamedParticipants"));
+  assert.ok(route.includes("canViewNamedParticipants"));
+  assert.ok(route.includes("forbidden_role"));
+  assert.ok(route.includes("recordParticipantsViewed"));
+  const participants = readFileSync(
+    path.join(process.cwd(), "lib/portal/participants.ts"),
+    "utf8"
+  );
+  assert.ok(participants.includes('action: "portal.participants_viewed"'));
+  assert.ok(participants.includes("actor_user_id"));
+  assert.ok(participants.includes("campaign_id"));
+  assert.ok(shell.includes("canViewOrgOperations"));
+  assert.ok(context.includes("canViewOrgOperations"));
+});
+
 test("outcome helpers still live in participantView.ts", () => {
   const source = readFileSync(
     path.join(process.cwd(), "lib/portal/participantView.ts"),

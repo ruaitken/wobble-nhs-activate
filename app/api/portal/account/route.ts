@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { jsonError, requireOrgAccess } from "@/lib/portal/access";
+import { jsonError, requireOrgAccess, requireSatisfiedMfa } from "@/lib/portal/access";
 import {
   AccountError,
   inviteAccountMember,
@@ -21,11 +21,15 @@ export async function GET(request: Request) {
     }
     const session = await requireOrgAccess(orgId);
     const membership = session.memberships.find((item) => item.org_id === orgId);
+    if (!canManageUsers(membership?.role)) {
+      return NextResponse.json({ ok: false, reason: "forbidden_role" }, { status: 403 });
+    }
+    requireSatisfiedMfa(session);
     const members = await listAccountMembers(orgId);
     return NextResponse.json({
       ok: true,
       members,
-      can_manage: canManageUsers(membership?.role),
+      can_manage: true,
       current_user_id: session.userId,
     });
   } catch (error) {
@@ -55,6 +59,7 @@ export async function POST(request: Request) {
     if (!canManageUsers(membership?.role)) {
       return NextResponse.json({ ok: false, reason: "forbidden_role" }, { status: 403 });
     }
+    requireSatisfiedMfa(session);
 
     const result = await inviteAccountMember({
       orgId,
@@ -100,6 +105,7 @@ export async function DELETE(request: Request) {
     if (!canManageUsers(membership?.role)) {
       return NextResponse.json({ ok: false, reason: "forbidden_role" }, { status: 403 });
     }
+    requireSatisfiedMfa(session);
 
     const members = await removeAccountMember({
       orgId,

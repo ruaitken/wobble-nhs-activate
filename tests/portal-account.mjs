@@ -71,9 +71,14 @@ test("a second administrator can be removed", () => {
   assert.equal(canRemoveMember(members, "admin-1"), true);
 });
 
-test("viewers can read the account list but cannot manage it", () => {
+test("viewers cannot read or manage the account list", () => {
   assert.equal(canManageUsers("viewer"), false);
   assert.equal(canManageUsers("customer_admin"), true);
+  const route = readFileSync(
+    path.join(process.cwd(), "app/api/portal/account/route.ts"),
+    "utf8"
+  );
+  assert.ok(route.includes("forbidden_role"));
 });
 
 test("account is its own tab and does not highlight Overview", () => {

@@ -1,11 +1,19 @@
 import type { PortalRole } from "@/lib/portal/membership";
 
-export function canManageLicences(role: PortalRole | undefined) {
+export function canViewOrgOperations(role: PortalRole | undefined) {
   return role === "customer_admin" || role === "wobble_admin";
 }
 
+export function canViewNamedParticipants(role: PortalRole | undefined) {
+  return canViewOrgOperations(role);
+}
+
+export function canManageLicences(role: PortalRole | undefined) {
+  return canViewOrgOperations(role);
+}
+
 export function canManageUsers(role: PortalRole | undefined) {
-  return role === "customer_admin" || role === "wobble_admin";
+  return canViewOrgOperations(role);
 }
 
 export function isWobbleAdmin(role: PortalRole | undefined) {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { jsonError, requireProgrammeAccess } from "@/lib/portal/access";
+import { jsonError, requireProgrammeAccess, requireSatisfiedMfa } from "@/lib/portal/access";
 import { canManageLicences } from "@/lib/portal/roles";
 import { getLicenceSnapshot, issueLicence, LicenceError } from "@/lib/portal/licences";
 
@@ -18,10 +18,14 @@ export async function GET(request: Request) {
     }
     const { session, programme } = await requireProgrammeAccess(orgId, campaignId);
     const membership = session.memberships.find((item) => item.org_id === orgId);
+    if (!canManageLicences(membership?.role)) {
+      return NextResponse.json({ ok: false, reason: "forbidden_role" }, { status: 403 });
+    }
+    requireSatisfiedMfa(session);
     const snapshot = await getLicenceSnapshot(
       orgId,
       campaignId,
-      canManageLicences(membership?.role) && programme.can_issue_licences
+      programme.can_issue_licences
     );
     return NextResponse.json({ ok: true, ...snapshot });
   } catch (error) {
@@ -51,6 +55,7 @@ export async function POST(request: Request) {
     if (!canManageLicences(membership?.role)) {
       return NextResponse.json({ ok: false, reason: "forbidden_role" }, { status: 403 });
     }
+    requireSatisfiedMfa(session);
     if (!programme.can_issue_licences) {
       return NextResponse.json({ ok: false, reason: "archived_programme" }, { status: 403 });
     }

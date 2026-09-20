@@ -2,6 +2,7 @@ import { getPortalSession } from "@/lib/portal/session";
 import { hasOrgAccess } from "@/lib/portal/membership";
 import { getProgrammeForOrg } from "@/lib/portal/programmes";
 import { hasWobbleAdminAccess } from "@/lib/portal/roles";
+import { mfaSatisfied } from "@/lib/portal/mfa";
 import type { PortalSession } from "@/lib/portal/session";
 import type { ProgrammeView } from "@/lib/portal/programmeStatus";
 
@@ -38,11 +39,18 @@ export async function requireProgrammeAccess(
   return { session, programme };
 }
 
+export function requireSatisfiedMfa(session: PortalSession) {
+  if (!mfaSatisfied(session)) {
+    throw new PortalAccessError(403, "mfa_required");
+  }
+}
+
 export async function requireWobbleAdmin(): Promise<PortalSession> {
   const session = await requirePortalSession();
   if (!hasWobbleAdminAccess(session.memberships)) {
     throw new PortalAccessError(403, "forbidden_role");
   }
+  requireSatisfiedMfa(session);
   return session;
 }
 

@@ -71,12 +71,13 @@ export default function InviteActivateClient({
       setError("Please make sure both passwords match.");
       return;
     }
-    if (!firstName.trim() || !lastName.trim()) {
-      setError("Please enter your first and last name.");
-      return;
-    }
     if (invite.ask_consent && consentChoice === "") {
       setError("Please choose whether your organisation can see you by name.");
+      return;
+    }
+    const nameRequired = !invite.ask_consent || consentChoice === "yes";
+    if (nameRequired && (!firstName.trim() || !lastName.trim())) {
+      setError("Please enter your first and last name.");
       return;
     }
 
@@ -272,6 +273,13 @@ export default function InviteActivateClient({
                       />
                     </label>
                   </div>
+                  {invite.ask_consent && consentChoice === "no" && (
+                    <div className="rounded-xl border border-black/10 bg-white/70 p-4 text-sm text-[#25303B]/80">
+                      You can leave the name boxes blank. You do not need to
+                      share your name if you do not want your organisation to
+                      see you by name.
+                    </div>
+                  )}
 
                   {invite.ask_consent && (
                     <fieldset className="space-y-3">
