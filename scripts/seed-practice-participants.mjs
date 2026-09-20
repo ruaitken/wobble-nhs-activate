@@ -200,8 +200,8 @@ for (const member of MEMBERS) {
       campaign_id: member.campaign,
       user_id: userId,
       status: "active",
-      first_name: member.first,
-      last_name: member.last,
+      first_name: member.consent === false ? "" : member.first,
+      last_name: member.consent === false ? "" : member.last,
     },
   });
 

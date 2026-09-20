@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
-import { jsonError, requireProgrammeAccess } from "@/lib/portal/access";
-import { getPortalParticipants } from "@/lib/portal/participants";
+import { jsonError, requireProgrammeAccess, requireSatisfiedMfa } from "@/lib/portal/access";
+import {
+  getPortalParticipants,
+  recordParticipantsViewed,
+} from "@/lib/portal/participants";
+import { canViewNamedParticipants } from "@/lib/portal/roles";
 
 export async function GET(request: Request) {
   try {
@@ -11,11 +15,21 @@ export async function GET(request: Request) {
       return NextResponse.json({ ok: false, reason: "missing_ids" }, { status: 400 });
     }
 
-    const { programme } = await requireProgrammeAccess(orgId, campaignId);
+    const { session, programme } = await requireProgrammeAccess(orgId, campaignId);
+    const membership = session.memberships.find((item) => item.org_id === orgId);
+    if (!canViewNamedParticipants(membership?.role)) {
+      return NextResponse.json({ ok: false, reason: "forbidden_role" }, { status: 403 });
+    }
+    requireSatisfiedMfa(session);
     if (!programme.show_participants) {
       return NextResponse.json({ ok: false, reason: "premium_required" }, { status: 403 });
     }
 
+    await recordParticipantsViewed({
+      actorUserId: session.userId,
+      orgId,
+      campaignId: programme.campaign_id,
+    });
     const snapshot = await getPortalParticipants(programme.campaign_id);
     return NextResponse.json({ ok: true, ...snapshot });
   } catch (error) {

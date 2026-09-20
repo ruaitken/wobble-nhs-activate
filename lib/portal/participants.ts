@@ -18,6 +18,25 @@ function displayParticipantId(userId: string) {
   return `WOB-${createHash("sha256").update(userId).digest("hex").slice(0, 6).toUpperCase()}`;
 }
 
+export async function recordParticipantsViewed({
+  actorUserId,
+  orgId,
+  campaignId,
+}: {
+  actorUserId: string;
+  orgId: string;
+  campaignId: string;
+}) {
+  const admin = getSupabaseServer();
+  await admin.from("portal_audit_events").insert({
+    actor_user_id: actorUserId,
+    org_id: orgId,
+    campaign_id: campaignId,
+    action: "portal.participants_viewed",
+    details: {},
+  });
+}
+
 export async function getPortalParticipants(
   campaignId: string
 ): Promise<ParticipantSnapshot> {

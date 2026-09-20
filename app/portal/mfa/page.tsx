@@ -3,23 +3,25 @@ export const revalidate = 0;
 
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import WobbleAdminForm from "@/app/portal/WobbleAdminForm";
-import SignOutButton from "@/app/portal/SignOutButton";
+import { Suspense } from "react";
 import { getPortalSession } from "@/lib/portal/session";
-import { hasWobbleAdminAccess } from "@/lib/portal/roles";
-import { listWobbleOrganisations } from "@/lib/portal/wobbleAdmin";
-import { mfaPagePath, mfaSatisfied } from "@/lib/portal/mfa";
-import { PORTAL_ADMIN_PATH, PORTAL_HOME_PATH, PORTAL_LOGIN_PATH } from "@/lib/portal/paths";
-import MfaResetForm from "@/app/portal/MfaResetForm";
+import { mfaSatisfied } from "@/lib/portal/mfa";
+import { PORTAL_HOME_PATH, PORTAL_LOGIN_PATH, safePortalPath } from "@/lib/portal/paths";
+import PortalMfaForm from "./MfaForm";
 
-export default async function WobbleAdminPage() {
+export default async function PortalMfaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
   const session = await getPortalSession();
   if (!session) redirect(PORTAL_LOGIN_PATH);
-  if (!hasWobbleAdminAccess(session.memberships)) redirect(PORTAL_HOME_PATH);
-  if (!mfaSatisfied(session)) redirect(mfaPagePath(PORTAL_ADMIN_PATH));
 
-  const organisations = await listWobbleOrganisations();
-  const memberOrgIds = session.memberships.map((membership) => membership.org_id);
+  const params = await searchParams;
+  const next = safePortalPath(params.next);
+
+  if (!session.needsMfa) redirect(next || PORTAL_HOME_PATH);
+  if (mfaSatisfied(session)) redirect(next || PORTAL_HOME_PATH);
 
   return (
     <main className="min-h-screen bg-[#A6D5CE] text-[#25303B]">
@@ -28,14 +30,14 @@ export default async function WobbleAdminPage() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-[#F9F5EF]/70 px-3 py-1 text-xs font-semibold tracking-wide ring-1 ring-black/5">
               <span className="h-2 w-2 rounded-full bg-[#E58B66]" />
-              Wobble desk
+              Customer portal
             </div>
             <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
-              New organisation
+              Authenticator check
             </h1>
             <p className="mt-2 max-w-prose text-sm text-[#25303B]/80 sm:text-base">
-              Create a customer organisation, add a later programme when they
-              renew, and set how long the programme and user access last.
+              Administrators who can see named lists need a second step after
+              the email link. Viewers who only see group totals skip this.
             </p>
           </div>
           <div className="inline-flex rounded-2xl bg-white/30 p-2 ring-1 ring-black/10">
@@ -50,14 +52,9 @@ export default async function WobbleAdminPage() {
           </div>
         </header>
         <section className="rounded-2xl bg-[#F9F5EF] p-6 shadow-xl ring-1 ring-black/5 sm:p-8">
-          <WobbleAdminForm
-            initialOrganisations={organisations}
-            memberOrgIds={memberOrgIds}
-          />
-          <MfaResetForm />
-          <div className="mt-6">
-            <SignOutButton className="flex items-center justify-center text-center" />
-          </div>
+          <Suspense>
+            <PortalMfaForm next={next} />
+          </Suspense>
         </section>
       </div>
     </main>

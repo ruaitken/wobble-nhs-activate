@@ -1,10 +1,13 @@
 import { createPortalServerClient } from "@/lib/supabase/server";
 import { getPortalMemberships, type PortalMembership } from "@/lib/portal/membership";
+import { parseAal, sessionNeedsMfa } from "@/lib/portal/mfa";
 
 export type PortalSession = {
   userId: string;
   email: string | null;
   memberships: PortalMembership[];
+  aal: "aal1" | "aal2";
+  needsMfa: boolean;
 };
 
 export async function getPortalSession(): Promise<PortalSession | null> {
@@ -17,10 +20,13 @@ export async function getPortalSession(): Promise<PortalSession | null> {
 
   const email =
     typeof data.claims.email === "string" ? data.claims.email : null;
+  const memberships = await getPortalMemberships(userId);
 
   return {
     userId,
     email,
-    memberships: await getPortalMemberships(userId),
+    memberships,
+    aal: parseAal(data.claims.aal),
+    needsMfa: sessionNeedsMfa(memberships),
   };
 }

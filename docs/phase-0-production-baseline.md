@@ -102,9 +102,10 @@ These are existing findings, not regressions introduced by portal work:
 1. Seven Vercel projects currently deploy this repository and serve the app.
    The `9i2r` project is the customer-facing project. Duplicate-project cleanup
    is separate work and must not delete or rename `9i2r`.
-2. Supabase reports that the three reporting functions above are executable by
-   `anon` and `authenticated` roles as `SECURITY DEFINER` functions. This must
-   be remediated before any participant-level reporting function is introduced.
+2. The three reporting functions above are `SECURITY DEFINER`. Practice now
+   restricts `EXECUTE` to `service_role` only
+   (`supabase/migrations/20260920140000_restrict_stats_function_grants.sql`).
+   Apply the same migration on live before treating this as closed.
 3. The current activation function checks and increments `seats_used` in
    separate operations. The new invitation flow must use an atomic reservation
    mechanism to prevent concurrent oversubscription.

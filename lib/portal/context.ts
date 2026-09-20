@@ -9,7 +9,8 @@ import {
   programmePath,
   type PortalTab,
 } from "@/lib/portal/paths";
-import { hasWobbleAdminAccess } from "@/lib/portal/roles";
+import { canViewOrgOperations, hasWobbleAdminAccess } from "@/lib/portal/roles";
+import { mfaPagePath, mfaSatisfied } from "@/lib/portal/mfa";
 import type { PortalMembership } from "@/lib/portal/membership";
 import type { PortalSession } from "@/lib/portal/session";
 import type { ProgrammeView } from "@/lib/portal/programmeStatus";
@@ -53,12 +54,20 @@ export async function loadPortalContext(
     redirect(PORTAL_HOME_PATH);
   }
 
-  if (tab === "participants" && !selected.show_participants) {
+  const membership = session.memberships.find((item) => item.org_id === orgId);
+  if (!membership) redirect(PORTAL_HOME_PATH);
+
+  if (tab !== "overview" && !canViewOrgOperations(membership.role)) {
     redirect(programmePath(orgId, selected.campaign_id, "overview"));
   }
 
-  const membership = session.memberships.find((item) => item.org_id === orgId);
-  if (!membership) redirect(PORTAL_HOME_PATH);
+  if (tab !== "overview" && !mfaSatisfied(session)) {
+    redirect(mfaPagePath(programmePath(orgId, selected.campaign_id, tab)));
+  }
+
+  if (tab === "participants" && !selected.show_participants) {
+    redirect(programmePath(orgId, selected.campaign_id, "overview"));
+  }
 
   return { session, membership, programmes, selected, tab };
 }

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createPortalRouteClient, requestOrigin } from "@/lib/supabase/route";
+import { getPortalMemberships } from "@/lib/portal/membership";
+import { mfaPagePath, sessionNeedsMfa } from "@/lib/portal/mfa";
 import { PORTAL_HOME_PATH, PORTAL_LOGIN_PATH, safePortalPath } from "@/lib/portal/paths";
 
 export async function GET(request: Request) {
@@ -43,5 +45,16 @@ export async function GET(request: Request) {
     );
   }
 
-  return applyCookies(NextResponse.redirect(`${origin}${next || PORTAL_HOME_PATH}`));
+  const destination = next || PORTAL_HOME_PATH;
+  const { data: userData } = await supabase.auth.getUser();
+  if (userData.user) {
+    const memberships = await getPortalMemberships(userData.user.id);
+    if (sessionNeedsMfa(memberships)) {
+      return applyCookies(
+        NextResponse.redirect(`${origin}${mfaPagePath(destination)}`)
+      );
+    }
+  }
+
+  return applyCookies(NextResponse.redirect(`${origin}${destination}`));
 }

@@ -11,6 +11,7 @@ import {
 } from "@/lib/portal/licenceMath";
 import { canSendInviteEmail, sendInviteEmail } from "@/lib/portal/inviteEmail";
 import {
+  claimNameFields,
   loadProfileNamesByEmail,
   namesAreValid,
   parseConsentChoice,
@@ -367,21 +368,24 @@ export async function completeInvitation({
     throw new LicenceError(403, "archived_programme");
   }
 
-  if (!namesAreValid(firstName, lastName)) {
-    throw new LicenceError(400, "missing_name");
-  }
-
   const askConsent = programme.dashboard_tier === "premium";
   const consentChoice = parseConsentChoice(consented);
   if (askConsent && consentChoice === null) {
     throw new LicenceError(400, "consent_required");
   }
 
-  await saveProfileNames({
-    userId: auth.user.id,
-    firstName,
-    lastName,
-  });
+  const storeClaimNames = !askConsent || consentChoice === true;
+  if (storeClaimNames && !namesAreValid(firstName, lastName)) {
+    throw new LicenceError(400, "missing_name");
+  }
+
+  if (namesAreValid(firstName, lastName)) {
+    await saveProfileNames({
+      userId: auth.user.id,
+      firstName,
+      lastName,
+    });
+  }
 
   const existingClaim = await getClaim(invitation.campaign_id, auth.user.id);
   const expiresAt = existingClaim?.expires_at
@@ -391,6 +395,7 @@ export async function completeInvitation({
           Date.now() + campaign.claim_duration_days * 24 * 60 * 60 * 1000
         )
       : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  const claimNames = claimNameFields(storeClaimNames, firstName, lastName);
 
   if (!existingClaim) {
     const { error: claimError } = await admin.from("nhs_claims").insert({
@@ -398,8 +403,8 @@ export async function completeInvitation({
       user_id: auth.user.id,
       status: "pending_grant",
       expires_at: expiresAt.toISOString(),
-      first_name: firstName.trim(),
-      last_name: lastName.trim(),
+      first_name: claimNames.first_name,
+      last_name: claimNames.last_name,
     });
     if (claimError) throw claimError;
 
@@ -416,8 +421,8 @@ export async function completeInvitation({
     await admin
       .from("nhs_claims")
       .update({
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
+        first_name: claimNames.first_name,
+        last_name: claimNames.last_name,
       })
       .eq("campaign_id", invitation.campaign_id)
       .eq("user_id", auth.user.id);

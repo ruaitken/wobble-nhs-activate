@@ -111,6 +111,16 @@ test("practice magic links can use Resend SMTP without a committed key", () => {
   assert.ok(template.includes("{{ .TokenHash }}"));
 });
 
+test("viewers cannot read issued licence emails", () => {
+  const route = readFileSync(
+    path.join(process.cwd(), "app/api/portal/licences/route.ts"),
+    "utf8"
+  );
+  const matches = route.match(/forbidden_role/g) ?? [];
+  assert.ok(route.includes("canManageLicences"));
+  assert.ok(matches.length >= 2);
+});
+
 test("invitation lists page 10 at a time after searching everyone", () => {
   const source = readFileSync(
     path.join(process.cwd(), "app/portal/LicenceManager.tsx"),

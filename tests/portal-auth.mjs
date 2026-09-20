@@ -36,6 +36,19 @@ test("the portal login page is reachable without a session", async () => {
   assert.equal(response.status, 200);
 });
 
+test("the authenticator page requires a session", async () => {
+  const response = await fetchSafely("/portal/mfa");
+  assert.ok(
+    [307, 308, 302, 303].includes(response.status),
+    `expected redirect, got ${response.status}`
+  );
+  const location = response.headers.get("location") ?? "";
+  assert.ok(
+    location.includes("/portal/login"),
+    `expected login redirect, got ${location}`
+  );
+});
+
 test("portal APIs reject logged-out users", async () => {
   const response = await fetchSafely("/api/portal/me");
   assert.equal(response.status, 401);
