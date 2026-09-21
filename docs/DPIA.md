@@ -6,11 +6,11 @@
 
 **Law:** UK GDPR and the Data Protection Act 2018.
 
-**Document status:** Draft for legal and DPO review. Technical claims are taken from this codebase. Policy and lawful-basis positions are intended, not settled. Do not treat this file as a signed DPIA.
+**Document status:** Draft for legal and DPO review. Not previously issued. Technical claims are taken from this codebase. Policy and lawful-basis positions are intended, not settled. Do not treat this file as a signed DPIA.
 
 **Out of scope of this repository (flagged as GAP):** the Wobble iOS/Android app, App Store and Play processing, and the live `nhs-activate` Edge Function source (this repository only invokes it).
 
-**Date of technical review:** 20 September 2026.
+**Date of technical review:** 20 September 2026 (same-day revision so this is one consistent first draft).
 
 **Repository reviewed:** `wobble-nhs-activate` (Next.js customer portal, `/activate`, token dashboards, `/invite`, portal APIs).
 
@@ -48,24 +48,27 @@ Consent wording on the invitation page is explicitly a draft, not legally review
 Commissioning staff (browser)
   -> HTTPS Vercel app (wobble-account-activate-9i2r)
   -> /portal/login (magic link) OR existing /dashboard/{token} (no login)
+  -> Administrators complete TOTP (aal2) before named lists or the Wobble desk
   -> /api/portal/* using SUPABASE_SERVICE_ROLE_KEY
-  -> Postgres: membership check, then campaign-scoped reads
+  -> Postgres: membership and role check, then campaign-scoped reads
 
 Patient invitation (Premium path)
   Staff enters email on Licences
   -> portal_participant_invitations (email + token hash)
   -> Resend email with raw /invite/{token} link
-  -> Patient sets password, name, yes/no named reporting
-  -> Auth user + nhs_claims + optional portal_reporting_consents
+  -> Patient sets password, optional name, yes/no named reporting
+  -> Auth user + nhs_claims (names only if yes) + portal_reporting_consents
   -> grantAppAccess -> RevenueCat promotional entitlement `access`
   -> Patient uses mobile app (NOT in this repo)
   -> App writes user_meta, user_data, assessments (tables documented here)
+  -> Later: app Settings can GET/POST /api/app/reporting-consent (website wiring)
 
 Named dashboard read
   GET /api/portal/participants?org_id=&campaign_id=
   -> requireProgrammeAccess (must be member of that org; campaign must belong to org)
-  -> Premium only
+  -> customer_admin or wobble_admin only; TOTP required; Premium only
   -> Filter nhs_claims users with consented=true and withdrawn_at null
+  -> Audit portal.participants_viewed
   -> Return names, hashed display id, minutes, sessions, last session, assessment change
 ```
 
@@ -182,12 +185,11 @@ Evidence: `supabase/migrations/20260910132151_portal_tables.sql`, `supabase/migr
 - All portal data access uses `SUPABASE_SERVICE_ROLE_KEY` (`lib/supabaseServer.ts`), which bypasses RLS. Isolation is only as good as `requireProgrammeAccess`. RLS is enabled on portal tables with **no policies**; `anon`/`authenticated` grants are revoked (`supabase/migrations/20260910132151_portal_tables.sql`). Comment: intentional until policies are added. Still true in code.
 - Viewers are Overview-only. Participants, Licences, and Account APIs return 403 `forbidden_role`; those nav items are hidden (`lib/portal/roles.ts`, `app/api/portal/participants/route.ts`, `app/api/portal/licences/route.ts`, `app/api/portal/account/route.ts`, `app/portal/PortalShell.tsx`). `loadPortalContext` also redirects viewers away from those pages.
 - Wobble administrators can list every organisation (`lib/portal/wobbleAdmin.ts` `listWobbleOrganisations`). Opening another org's portal still needs membership in that org (`app/portal/WobbleAdminForm.tsx` `memberOrgIds`).
-- Phase 0: `get_campaign_stats` is `SECURITY DEFINER`. Practice revokes `EXECUTE` from `anon` / `authenticated` and leaves `service_role` (`supabase/migrations/20260920140000_restrict_stats_function_grants.sql`). Live still needs that migration.
+- `get_campaign_stats` (and siblings) are `SECURITY DEFINER`. `EXECUTE` is revoked from `anon` / `authenticated` and granted to `service_role` on practice and on live Wobble-App (`supabase/migrations/20260920140000_restrict_stats_function_grants.sql`). Token dashboards still work because they already call the functions via the server key.
 
 **Absent:**
 
-- Audit of who opened which named record (see 1.10).
-- RLS policies that would enforce org isolation if a user used the anon key.
+- RLS policies that would enforce org isolation if a user used the anon key. Portal reads still use the service role, so policies alone would not bind day-to-day portal queries until that client changes.
 
 ### 1.10 Audit logging
 
@@ -199,8 +201,10 @@ Evidence: `supabase/migrations/20260910132151_portal_tables.sql`, `supabase/migr
 - `portal.licence_activated` (includes `consented` in `details`)
 - `portal.member_invited` / `portal.member_removed`
 - `portal.org_created` / `portal.programme_added`
+- `portal.participants_viewed` (named list API and page; `actor_user_id`, `org_id`, `campaign_id`)
+- `portal.mfa_completed` / `portal.mfa_reset`
 
-Named Participants views write `portal.participants_viewed` with `actor_user_id`, `org_id`, and `campaign_id` (`lib/portal/participants.ts`, used by `app/api/portal/participants/route.ts` and the participants page). Overview views are not logged.
+Overview views are not logged. There is no per-row "opened this person" event, only that the named list was opened.
 
 ### 1.11 Consent implementation
 
@@ -213,7 +217,7 @@ Named Participants views write `portal.participants_viewed` with `actor_user_id`
 - `consented` boolean
 - `consent_version` constant `portal-v1` (`lib/portal/inviteProfile.ts` `REPORTING_CONSENT_VERSION`)
 - `consented_at` set only if `consented` is true; otherwise null
-- `withdrawn_at` always set to **null** on save
+- `withdrawn_at` is **null** at first save (`saveReportingConsent` on activation). Later `setReportingConsent` (patient API) sets `withdrawn_at` to now on withdraw, or clears it on restore
 - `created_at` default now
 
 **Logged:** `portal.licence_activated` details include `consented` (`lib/portal/licences.ts`).
@@ -222,7 +226,7 @@ Named Participants views write `portal.participants_viewed` with `actor_user_id`
 
 **Named view after decline or missing consent:** `isNamedReportingVisible` requires `consented` and no `withdrawn_at` (`lib/portal/participantVisibility.ts`). Hidden people stay in Overview (`countHiddenParticipants`; Participants copy in `app/portal/ParticipantList.tsx`).
 
-**Withdrawal later:** Partial / effectively absent as a product flow. Column `withdrawn_at` exists and the visibility helper honours it. Tests cover a withdrawn timestamp (`tests/portal-participants.mjs`). There is **no** patient or staff API in this repo that sets `withdrawn_at` or lets a patient change their mind. `saveReportingConsent` always writes `withdrawn_at: null`. Re-upserting `consented: false` would hide the name (because `consented` must be true), but nothing calls that after activation.
+**Withdrawal later:** Partial. Website `GET`/`POST /api/app/reporting-consent` (Bearer Auth JWT, not under the portal matcher) can withdraw or restore named reporting for campaign users on Premium programmes (`lib/portal/patientConsent.ts`, `lib/portal/inviteProfile.ts` `setReportingConsent`). Withdraw hides the name on Participants (`withdrawn_at` set; claim names cleared). Restore copies `user_meta` names onto the claim if present. Direct-to-consumer users get `not_applicable`. The Settings toggle lives in the app repo, not this one; wiring is documented in `docs/app-reporting-consent.md`. After app lock, exceptions go to `enquiries@wobblebalance.com`. There is no staff UI to flip consent.
 
 **Base programmes:** no consent question; Participants tab hidden (`lib/portal/programmeStatus.ts` `show_participants`).
 
@@ -269,7 +273,7 @@ Apple and Google are linked as app download URLs only (`lib/portal/inviteEmail.t
 
 - RevenueCat entitlement end **locks the app**. It does **not** delete the person and it does **not** hide them from the named Participants list.
 - If named-reporting consent is still on, the commissioning service can still open them as an **individual** after access expires. Their activity also stays in **Overview** totals. That is how the service reviews the year.
-- They drop out of the **individual** view only if they **withdraw consent** (future in-app toggle while they still have access, or an exception request to `enquiries@wobblebalance.com` after they can no longer open the app). Overview totals still include them.
+- They drop out of the **individual** view only if they **withdraw consent** (in-app Settings toggle while they still have access, calling this website's consent API, or an exception request to `enquiries@wobblebalance.com` after they can no longer open the app). Overview totals still include them.
 - **Erasure** (remove from the database) is a separate rights request to the same inbox, handled case by case. It is not automatic at entitlement end. Anonymised programme totals may be kept so year-end reporting does not break.
 - The Participants query today selects all `nhs_claims` for the campaign and does not filter on `expires_at` (`lib/portal/participants.ts`). The intended position matches current code: expiry does not remove the named row.
 
@@ -336,10 +340,10 @@ Supabase London: UK. Resend, RevenueCat, Vercel: confirm. Flag as a transfer ris
 | Right | In this repo |
 | --- | --- |
 | Access | No patient SAR/export tool. GAP |
-| Withdrawal of named sharing | Schema ready; no user journey. GAP |
-| Erasure | No product flow. GAP |
+| Withdrawal of named sharing | Website API in place. App Settings toggle is in the other repo. After lock: `enquiries@wobblebalance.com`. Partial |
+| Erasure | No product flow. Email inbox only. GAP |
 | Object / restrict | Not implemented. GAP |
-| Staff can hide a name by setting consent false | No UI |
+| Staff can hide a name by setting consent false | No staff UI |
 
 ### 2.9 How consent is obtained and evidenced
 
@@ -347,6 +351,7 @@ Supabase London: UK. Resend, RevenueCat, Vercel: confirm. Flag as a transfer ris
 - Required choice on Premium before complete.
 - Stored with version `portal-v1` and `consented_at` if yes.
 - Audit row on activation with the boolean.
+- Later change of mind is written by `setReportingConsent` (`withdrawn_at` or restore).
 - Wording is a **draft** (`docs/phase-9-invite-consent.md`). Legal must replace it with ICO-grade explicit consent text (who sees what, for how long, how to withdraw).
 
 ---
@@ -359,15 +364,15 @@ Ratings are a technical draft for the DPO, not a residual risk sign-off.
 | --- | --- | --- | --- | --- |
 | R1 | Staff in org A see org B's named patients | Low if membership SQL is correct; higher because service_role bypasses RLS | High | Mitigated in app by `requireProgrammeAccess`. No RLS policies |
 | R2 | Viewer or wide staff role sees named health data | Low after role gate | High | Viewers redirected from Participants / Licences / Account; APIs return 403 |
-| R3 | Named data shown after withdrawal | High if withdrawal is requested | High | No withdrawal product path |
+| R3 | Named data shown after withdrawal | Low if the API and app toggle stay wired | High | Filter honours `withdrawn_at`. Residual: app toggle not in this repo; no staff hide control |
 | R4 | Named data for people who never consented (legacy `/activate`) | Low in UI (filter). Medium if someone queries leftover claim names | High | UI hides them; invite decline now omits claim names. Legacy `/activate` still has no consent |
-| R5 | Token dashboard or `get_campaign_stats` leak | Medium (token URL; SECURITY DEFINER) | Medium | Aggregates; suppress under 5 on Overview. Practice execute grants now `service_role` only; live still to apply |
+| R5 | Token dashboard or `get_campaign_stats` leak | Medium (token URL); lower for direct RPC | Medium | Aggregates; suppress under 5 on Overview. `EXECUTE` is `service_role` only on practice and live |
 | R6 | Over-collection (emails to staff) | Medium | Medium | See minimisation |
 | R7 | Invite email / magic link goes to wrong mailbox or is forwarded | Medium | High | Email is the identifier |
 | R8 | RevenueCat or Resend transfer outside UK | Medium | Medium | UUID versus email; no scores to RevenueCat |
 | R9 | Retention beyond need / leftover after contract | High (no deletion job) | High | GAP |
 | R10 | Colour-coded decline treated as clinical risk | Medium | Medium | Display only; still a safety and communications risk |
-| R11 | No view audit: cannot investigate who looked at a named record | High | Medium | Absent logging |
+| R11 | Cannot investigate who opened a named list | Low for Participants list; High for Overview | Medium | List open is logged. Not per person. Overview unlogged |
 | R12 | Wobble admin lists all customer orgs | Low (trusted staff) | High if account compromised | TOTP required for wobble_admin named/desk access |
 | R13 | Duplicate Vercel projects serving the same repo | Documented in Phase 0 | Medium | Operational, not coded |
 
@@ -379,9 +384,9 @@ Ratings are a technical draft for the DPO, not a residual risk sign-off.
 | --- | --- | --- |
 | R1 | Org membership + campaign-in-org check; portal matcher; Premium gate | RLS policies not written; service_role |
 | R2 | Named Participants, Licences, and Account require customer_admin or wobble_admin on API, page, and nav | Residual: service_role still bypasses RLS |
-| R3 | `withdrawn_at` in schema and filter | Not mitigated as a right |
+| R3 | `withdrawn_at` filter; patient consent API; claim names cleared on withdraw | App toggle not verified from this repo; no staff hide UI. Partial |
 | R4 | Visibility filter; Overview privacy copy; claim names omitted on decline | Legacy activate has no consent |
-| R5 | Forbidden-key check; n<5 suppress on Overview; practice execute grants now `service_role` only | Token dashboards; live grants still to apply. Partial |
+| R5 | Forbidden-key check; n<5 suppress on Overview; `EXECUTE` limited to `service_role` on practice and live | Token dashboards still work with a URL. Partial |
 | R6 | Participants payload stripped of email/uuid; claim names omitted on decline | Licences emails. Partial |
 | R7 | Email locked to invite; token hashed at rest | Raw token in email. Partial |
 | R8 | RevenueCat gets id + dates only | Transfer docs GAP |
@@ -404,7 +409,7 @@ Ratings are a technical draft for the DPO, not a residual risk sign-off.
 - [x] Restrict named Participants, Licences, and Account to `customer_admin` / `wobble_admin` (viewers are Overview-only)
 - [x] Audit log for named Participants views (`portal.participants_viewed`). Overview views still unlogged.
 - [ ] RLS policies or an equivalent database-enforced tenant check
-- [x] Restrict `EXECUTE` on `get_campaign_stats` / `get_org_stats` / `get_stats_for_campaigns` to `service_role` (practice applied; live still to apply)
+- [x] Restrict `EXECUTE` on `get_campaign_stats` / `get_org_stats` / `get_stats_for_campaigns` to `service_role` (practice and live Wobble-App applied 20 September 2026)
 - [ ] Retention, backup, and deletion at contract end and on erasure requests
 - [ ] Processor register: Vercel region, Resend, RevenueCat, Auth SMTP; transfer tools
 - [ ] Encryption at rest confirmation from Supabase/Vercel
