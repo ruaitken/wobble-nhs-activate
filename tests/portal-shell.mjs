@@ -103,6 +103,30 @@ test("archived programmes cannot issue licences", () => {
   assert.equal(falls.can_issue_licences, true);
 });
 
+test("tab changes show a pane spinner, not a full-page freeze", () => {
+  const loading = readFileSync(
+    path.join(
+      process.cwd(),
+      "app/portal/[orgId]/[campaignId]/loading.tsx"
+    ),
+    "utf8"
+  );
+  const pane = readFileSync(
+    path.join(process.cwd(), "app/portal/PortalPaneLoading.tsx"),
+    "utf8"
+  );
+  const layout = readFileSync(
+    path.join(process.cwd(), "app/portal/[orgId]/[campaignId]/layout.tsx"),
+    "utf8"
+  );
+
+  assert.ok(loading.includes("PortalPaneLoading"));
+  assert.ok(pane.includes("Loading…"));
+  assert.ok(pane.includes("role=\"status\""));
+  assert.equal(pane.includes("min-h-screen"), false);
+  assert.ok(layout.includes("PortalShell"));
+});
+
 test("overview sits on the teal page, not inside a cream card", () => {
   const shell = readFileSync(
     path.join(process.cwd(), "app/portal/PortalShell.tsx"),

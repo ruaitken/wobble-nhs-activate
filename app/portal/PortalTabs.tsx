@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import PortalLinkPending from "@/app/portal/PortalLinkPending";
 import { programmePath, tabFromPath, type PortalTab } from "@/lib/portal/paths";
 
 export default function PortalTabs({
@@ -25,11 +26,12 @@ export default function PortalTabs({
             href={programmePath(orgId, campaignId, item.id)}
             className={
               isActive
-                ? "rounded-lg bg-[#25303B] px-3 py-2 text-sm font-semibold text-white"
-                : "rounded-lg px-3 py-2 text-sm font-semibold text-[#25303B] hover:bg-white/70"
+                ? "flex items-center justify-between gap-2 rounded-lg bg-[#25303B] px-3 py-2 text-sm font-semibold text-white"
+                : "flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#25303B] hover:bg-white/70"
             }
           >
             {item.label}
+            <PortalLinkPending />
           </Link>
         );
       })}
