@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { getSupabaseBrowserClient } from "@/lib/supabaseClient";
+import AppDownloadNextSteps from "@/app/invite/AppDownloadNextSteps";
+import { appDownloadCopy } from "@/lib/portal/appDownloadCopy";
 
 type InviteResponse =
   | {
@@ -19,9 +21,6 @@ type InviteResponse =
       last_name: string;
     }
   | { ok: false; reason: string };
-
-const APP_STORE_URL = "https://apps.apple.com/gb/app/wobble-strength-balance/id6749583215";
-const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=com.wobblebalance.app";
 
 export default function InviteActivateClient({
   token,
@@ -164,7 +163,8 @@ export default function InviteActivateClient({
               Activate your place
             </h1>
             <p className="mt-2 text-sm text-[#25303B]/80">
-              This link only works for the invited email address.
+              This link only works for the invited email address.{" "}
+              {appDownloadCopy.checkJunk}
             </p>
           </div>
           <div className="inline-flex rounded-2xl bg-white/30 p-2 ring-1 ring-black/10">
@@ -192,7 +192,7 @@ export default function InviteActivateClient({
           {!loading && invite?.ok === true && !invite.open && (
             <div className="rounded-xl border border-[#E58B66]/40 bg-[#E58B66]/10 p-4 text-sm">
               {invite.status === "activated"
-                ? "This invitation has already been used."
+                ? appDownloadCopy.alreadyActivated
                 : "This invitation has expired. Ask your organisation to send a new pack."}
             </div>
           )}
@@ -220,32 +220,13 @@ export default function InviteActivateClient({
                 <div className="rounded-xl border border-[#E7B450]/50 bg-[#E7B450]/15 p-4">
                   <div className="text-sm font-extrabold">
                     {appAccess === "pending"
-                      ? "Your place is reserved"
-                      : "Account activated — you now have access to Wobble."}
+                      ? appDownloadCopy.pendingTitle
+                      : appDownloadCopy.accountReadyTitle}
                   </div>
-                  <p className="mt-2 text-sm text-[#25303B]/80">
-                    {appAccess === "pending"
-                      ? "Download the app and sign in with this email shortly. App access is being finished."
-                      : `Download the app and sign in with ${invite.invited_email}.`}
-                  </p>
-                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                    <a
-                      href={APP_STORE_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center rounded-xl bg-[#25303B] px-4 py-2 text-sm font-extrabold text-[#F9F5EF]"
-                    >
-                      Download on the App Store
-                    </a>
-                    <a
-                      href={GOOGLE_PLAY_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white/60 px-4 py-2 text-sm font-extrabold"
-                    >
-                      Get it on Google Play
-                    </a>
-                  </div>
+                  <AppDownloadNextSteps
+                    email={invite.invited_email}
+                    pending={appAccess === "pending"}
+                  />
                 </div>
               ) : (
                 <>

@@ -3,14 +3,17 @@ export const revalidate = 0;
 
 import Image from "next/image";
 import { Montserrat } from "next/font/google";
+import {
+  APP_STORE_URL,
+  GOOGLE_PLAY_URL,
+  appDownloadCopy,
+  signInWithEmailCopy,
+} from "@/lib/portal/appDownloadCopy";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
 });
-
-const APP_STORE_URL = "https://apps.apple.com/gb/app/wobble-strength-balance/id6749583215";
-const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=com.wobblebalance.app";
 
 export default function InformationPackPage() {
   return (
@@ -47,11 +50,14 @@ export default function InformationPackPage() {
             <h2 className="text-sm font-extrabold">1. Open your invitation email</h2>
             <p className="mt-2 text-sm text-[#25303B]/80">
               Activate using the same email address the pack was sent to. The
-              link expires after 14 days.
+              link expires after 14 days. {appDownloadCopy.checkJunk}
             </p>
           </div>
           <div>
-            <h2 className="text-sm font-extrabold">2. Download the Wobble app</h2>
+            <h2 className="text-sm font-extrabold">2. Download the Wobble app on a phone or tablet</h2>
+            <p className="mt-2 text-sm text-[#25303B]/80">
+              {appDownloadCopy.downloadOnDevice}
+            </p>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <a
                 href={APP_STORE_URL}
@@ -72,10 +78,9 @@ export default function InformationPackPage() {
             </div>
           </div>
           <div>
-            <h2 className="text-sm font-extrabold">3. Sign in and complete your assessment</h2>
+            <h2 className="text-sm font-extrabold">3. Log in. Do not tap Get started</h2>
             <p className="mt-2 text-sm text-[#25303B]/80">
-              Use the same email and password you created on the activation
-              page, then finish onboarding in the app.
+              {appDownloadCopy.logInNotGetStarted} {signInWithEmailCopy()}
             </p>
           </div>
         </section>
