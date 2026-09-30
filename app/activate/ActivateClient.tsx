@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabaseClient";
 import Image from "next/image";
+import AppDownloadNextSteps from "@/app/invite/AppDownloadNextSteps";
+import { appDownloadCopy } from "@/lib/portal/appDownloadCopy";
 
 type ApiResponse =
   | {
@@ -22,9 +24,6 @@ type ApiResponse =
       };
     }
   | { ok: false; reason: string; error?: string };
-
-const APP_STORE_URL = "https://apps.apple.com/gb/app/wobble-strength-balance/id6749583215";
-const GOOGLE_PLAY_URL = "https://play.google.com/store/apps/details?id=com.wobblebalance.app";
 
 type ActivationStatus = "idle" | "error" | "success";
 type ActivationResult = { title: string; message: string } | null;
@@ -199,9 +198,8 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
       setConfirmPassword("");
       setActivationStatus("success");
       setResult({
-        title: "Account activated — you now have access to Wobble.",
-        message:
-          "Please download the app and complete onboarding and the assessment. Your journey to building better balance and strength begins now.",
+        title: appDownloadCopy.accountReadyTitle,
+        message: appDownloadCopy.accountReadyLead,
       });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -425,41 +423,12 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
                     aria-live="polite"
                   >
                     <div className="text-sm font-extrabold">{result.title}</div>
-                    <div className="mt-1 text-sm text-[#25303B]/80">{result.message}</div>
+                    {activationStatus !== "success" && (
+                      <div className="mt-1 text-sm text-[#25303B]/80">{result.message}</div>
+                    )}
 
                     {activationStatus === "success" && (
-                      <div className="mt-4">
-                        <ol className="list-decimal space-y-3 pl-5 text-sm text-[#25303B]/85">
-                          <li>
-                            <div className="font-semibold text-[#25303B]">Download Wobble</div>
-                            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-                              <a
-                                href={APP_STORE_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center rounded-xl bg-[#25303B] px-4 py-2 text-sm font-extrabold text-[#F9F5EF] shadow-sm transition hover:bg-[#25303B]/90"
-                              >
-                                Download on the App Store
-                              </a>
-                              <a
-                                href={GOOGLE_PLAY_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white/60 px-4 py-2 text-sm font-extrabold text-[#25303B] shadow-sm transition hover:bg-white/80"
-                              >
-                                Get it on Google Play
-                              </a>
-                            </div>
-                          </li>
-                          <li>
-                            <div className="font-semibold text-[#25303B]">Sign in</div>
-                            <div className="mt-1">Use the same email and password you entered here.</div>
-                          </li>
-                          <li>
-                            <div className="font-semibold text-[#25303B]">Complete onboarding &amp; assessment</div>
-                          </li>
-                        </ol>
-                      </div>
+                      <AppDownloadNextSteps email={email} />
                     )}
                   </div>
                 )}

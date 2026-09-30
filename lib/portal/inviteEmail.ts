@@ -1,11 +1,13 @@
 import { requestOrigin } from "@/lib/supabase/route";
+import {
+  APP_STORE_URL,
+  GOOGLE_PLAY_URL,
+  appDownloadCopy,
+  signInWithEmailCopy,
+} from "@/lib/portal/appDownloadCopy";
 
 const DEFAULT_FROM_EMAIL = "enquiries@wobblebalance.com";
 const DEFAULT_FROM_NAME = "Wobble";
-const APP_STORE_URL =
-  "https://apps.apple.com/gb/app/wobble-strength-balance/id6749583215";
-const GOOGLE_PLAY_URL =
-  "https://play.google.com/store/apps/details?id=com.wobblebalance.app";
 const SUPPORT_EMAIL = "enquiries@wobblebalance.com";
 
 function isLocalSupabase() {
@@ -64,14 +66,17 @@ export function buildInviteEmail({
     "",
     "1. Activate your place",
     "Use the same email address this pack was sent to. This link expires in 14 days.",
+    appDownloadCopy.checkJunk,
     activateUrl,
     "",
-    "2. Download the Wobble app",
+    "2. Download the Wobble app on your phone or tablet",
+    appDownloadCopy.downloadOnDevice,
     `App Store: ${APP_STORE_URL}`,
     `Google Play: ${GOOGLE_PLAY_URL}`,
     "",
-    "3. Sign in and complete your assessment",
-    "Use the email and password you create on the activation page.",
+    "3. Log in. Do not tap Get started",
+    appDownloadCopy.logInNotGetStarted,
+    signInWithEmailCopy(),
     "",
     "Information pack:",
     packUrl,
@@ -114,18 +119,19 @@ export function buildInviteEmail({
                   </tr>
                 </table>
                 <p style="margin:0 0 28px;font-size:13px;line-height:1.5;color:#25303B;">
-                  This link expires in 14 days. If the button does not work, copy this address:<br />
+                  This link expires in 14 days. ${escapeHtml(appDownloadCopy.checkJunk)} If the button does not work, copy this address:<br />
                   <a href="${safeActivateUrl}" style="color:#25303B;word-break:break-all;">${safeActivateUrl}</a>
                 </p>
-                <p style="margin:0 0 8px;font-size:14px;font-weight:700;">Then download the app</p>
+                <p style="margin:0 0 8px;font-size:14px;font-weight:700;">Then download the app on your phone or tablet</p>
                 <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">
+                  ${escapeHtml(appDownloadCopy.downloadOnDevice)}<br /><br />
                   <a href="${APP_STORE_URL}" style="color:#25303B;font-weight:700;">App Store</a>
                   &nbsp;&nbsp;·&nbsp;&nbsp;
                   <a href="${GOOGLE_PLAY_URL}" style="color:#25303B;font-weight:700;">Google Play</a>
                 </p>
-                <p style="margin:0 0 8px;font-size:14px;font-weight:700;">Sign in and complete your assessment</p>
+                <p style="margin:0 0 8px;font-size:14px;font-weight:700;">Log in. Do not tap Get started</p>
                 <p style="margin:0 0 24px;font-size:15px;line-height:1.6;">
-                  Use the email and password you create on the activation page, then finish onboarding in the app.
+                  ${escapeHtml(appDownloadCopy.logInNotGetStarted)} ${escapeHtml(signInWithEmailCopy())}
                 </p>
                 <p style="margin:0;font-size:14px;line-height:1.6;">
                   Read the information pack:

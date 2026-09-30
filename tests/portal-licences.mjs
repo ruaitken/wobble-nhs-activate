@@ -88,7 +88,7 @@ test("information packs can send through Resend without touching live activate",
   assert.ok(source.includes("mailpitUrl"));
   assert.ok(source.includes("Your place is ready"));
   assert.ok(source.includes("Activate your Wobble place"));
-  assert.ok(source.includes("apps.apple.com"));
+  assert.ok(source.includes("appDownloadCopy"));
   assert.ok(source.includes("#A6D5CE"));
   assert.ok(nhs.includes("nhs-activate"));
   assert.ok(!nhs.includes("resend.com"));

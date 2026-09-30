@@ -175,7 +175,8 @@ test("portal invitations grant app access without changing nhs-activate", () => 
   assert.ok(complete.includes("pending_grant"));
   assert.ok(nhs.includes('functions.invoke("nhs-activate"'));
   assert.ok(!nhs.includes("grantAppAccess"));
-  assert.ok(ui.includes("Your place is reserved"));
+  assert.ok(ui.includes("AppDownloadNextSteps"));
+  assert.ok(ui.includes("pendingTitle"));
 });
 
 test("practice skips live RevenueCat; missing keys on a live host stay pending", () => {
@@ -216,4 +217,24 @@ test("the live activation page wraps search params in Suspense", () => {
   );
   assert.ok(page.includes("Suspense"));
   assert.ok(client.includes("AbortSignal.timeout"));
+});
+
+test("after activate, patients are told to log in on a phone or tablet", () => {
+  const copy = readFileSync(
+    path.join(process.cwd(), "lib/portal/appDownloadCopy.ts"),
+    "utf8"
+  );
+  const pack = readFileSync(
+    path.join(process.cwd(), "app/pack/page.tsx"),
+    "utf8"
+  );
+  const email = readFileSync(
+    path.join(process.cwd(), "lib/portal/inviteEmail.ts"),
+    "utf8"
+  );
+  assert.ok(copy.includes("Do not tap Get started"));
+  assert.ok(copy.includes("junk or spam"));
+  assert.ok(copy.includes("phone or tablet"));
+  assert.ok(pack.includes("appDownloadCopy"));
+  assert.ok(email.includes("appDownloadCopy"));
 });
