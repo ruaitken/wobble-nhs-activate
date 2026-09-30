@@ -6,9 +6,13 @@ import { Montserrat } from "next/font/google";
 import {
   APP_STORE_URL,
   GOOGLE_PLAY_URL,
-  appDownloadCopy,
   signInWithEmailCopy,
 } from "@/lib/portal/appDownloadCopy";
+import {
+  CheckJunkLine,
+  DownloadOnDeviceLine,
+  LogInNotCreateAccountLine,
+} from "@/app/invite/AppDownloadNextSteps";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -21,14 +25,14 @@ export default function InformationPackPage() {
       <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-14">
         <header className="mb-7 flex items-start justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#F9F5EF]/70 px-3 py-1 text-xs font-semibold tracking-wide ring-1 ring-black/5">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#F9F5EF]/70 px-3 py-1 text-sm font-semibold tracking-wide ring-1 ring-black/5">
               <span className="h-2 w-2 rounded-full bg-[#E58B66]" />
               Wobble information pack
             </div>
-            <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
+            <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">
               Your place on Wobble
             </h1>
-            <p className="mt-2 max-w-prose text-sm text-[#25303B]/80 sm:text-base">
+            <p className="mt-2 max-w-prose text-base text-[#25303B]/80 sm:text-lg">
               This page is the hosted information pack. Nothing is attached as a
               file. Use the activation link in your email to claim your place.
             </p>
@@ -47,23 +51,23 @@ export default function InformationPackPage() {
 
         <section className="space-y-5 rounded-2xl bg-[#F9F5EF] p-6 shadow-xl ring-1 ring-black/5 sm:p-8">
           <div>
-            <h2 className="text-sm font-extrabold">1. Open your invitation email</h2>
-            <p className="mt-2 text-sm text-[#25303B]/80">
+            <h2 className="text-base font-extrabold">1. Open your invitation email</h2>
+            <p className="mt-2 text-base text-[#25303B]/80">
               Activate using the same email address the pack was sent to. The
-              link expires after 14 days. {appDownloadCopy.checkJunk}
+              link expires after 14 days. <CheckJunkLine />
             </p>
           </div>
           <div>
-            <h2 className="text-sm font-extrabold">2. Download the Wobble app on a phone or tablet</h2>
-            <p className="mt-2 text-sm text-[#25303B]/80">
-              {appDownloadCopy.downloadOnDevice}
+            <h2 className="text-base font-extrabold">2. Download the Wobble app on a phone or tablet</h2>
+            <p className="mt-2 text-base text-[#25303B]/80">
+              <DownloadOnDeviceLine />
             </p>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <a
                 href={APP_STORE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center rounded-xl bg-[#25303B] px-4 py-2 text-sm font-extrabold text-[#F9F5EF]"
+                className="inline-flex items-center justify-center rounded-xl bg-[#25303B] px-4 py-3 text-base font-extrabold text-[#F9F5EF]"
               >
                 Download on the App Store
               </a>
@@ -71,16 +75,18 @@ export default function InformationPackPage() {
                 href={GOOGLE_PLAY_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white/60 px-4 py-2 text-sm font-extrabold"
+                className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white/60 px-4 py-3 text-base font-extrabold"
               >
                 Get it on Google Play
               </a>
             </div>
           </div>
           <div>
-            <h2 className="text-sm font-extrabold">3. Log in. Do not tap Get started</h2>
-            <p className="mt-2 text-sm text-[#25303B]/80">
-              {appDownloadCopy.logInNotGetStarted} {signInWithEmailCopy()}
+            <h2 className="text-base font-extrabold">
+              3. Tap Log in. Do not tap Create an account
+            </h2>
+            <p className="mt-2 text-base text-[#25303B]/80">
+              <LogInNotCreateAccountLine /> {signInWithEmailCopy()}
             </p>
           </div>
         </section>

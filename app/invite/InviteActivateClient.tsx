@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { getSupabaseBrowserClient } from "@/lib/supabaseClient";
-import AppDownloadNextSteps from "@/app/invite/AppDownloadNextSteps";
+import AppDownloadNextSteps, {
+  AlreadyActivatedLine,
+  CheckJunkLine,
+} from "@/app/invite/AppDownloadNextSteps";
 import { appDownloadCopy } from "@/lib/portal/appDownloadCopy";
 
 type InviteResponse =
@@ -155,16 +158,16 @@ export default function InviteActivateClient({
       <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-14">
         <header className="mb-7 flex items-start justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#F9F5EF]/70 px-3 py-1 text-xs font-semibold tracking-wide ring-1 ring-black/5">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#F9F5EF]/70 px-3 py-1 text-base font-semibold tracking-wide ring-1 ring-black/5">
               <span className="h-2 w-2 rounded-full bg-[#E58B66]" />
               Wobble invitation
             </div>
-            <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
+            <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">
               Activate your place
             </h1>
-            <p className="mt-2 text-sm text-[#25303B]/80">
+            <p className="mt-2 text-base text-[#25303B]/80">
               This link only works for the invited email address.{" "}
-              {appDownloadCopy.checkJunk}
+              <CheckJunkLine />
             </p>
           </div>
           <div className="inline-flex rounded-2xl bg-white/30 p-2 ring-1 ring-black/10">
@@ -180,20 +183,22 @@ export default function InviteActivateClient({
         </header>
 
         <section className="rounded-2xl bg-[#F9F5EF] p-6 shadow-xl ring-1 ring-black/5 sm:p-8">
-          {loading && <p className="text-sm font-semibold">Checking your invitation…</p>}
+          {loading && <p className="text-base font-semibold">Checking your invitation…</p>}
 
           {!loading && invite?.ok === false && (
-            <div className="rounded-xl border border-[#E58B66]/40 bg-[#E58B66]/10 p-4 text-sm">
+            <div className="rounded-xl border border-[#E58B66]/40 bg-[#E58B66]/10 p-4 text-base">
               This invitation link cannot be used. Ask your organisation to send
               a new information pack.
             </div>
           )}
 
           {!loading && invite?.ok === true && !invite.open && (
-            <div className="rounded-xl border border-[#E58B66]/40 bg-[#E58B66]/10 p-4 text-sm">
-              {invite.status === "activated"
-                ? appDownloadCopy.alreadyActivated
-                : "This invitation has expired. Ask your organisation to send a new pack."}
+            <div className="rounded-xl border border-[#E58B66]/40 bg-[#E58B66]/10 p-4 text-base">
+              {invite.status === "activated" ? (
+                <AlreadyActivatedLine />
+              ) : (
+                "This invitation has expired. Ask your organisation to send a new pack."
+              )}
             </div>
           )}
 
@@ -201,24 +206,24 @@ export default function InviteActivateClient({
             <div className="space-y-5">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-black/10 bg-white/50 p-4">
-                  <div className="text-xs font-semibold text-[#25303B]/70">Programme</div>
-                  <div className="mt-1 text-sm font-bold">{invite.programme_name}</div>
+                  <div className="text-base font-semibold text-[#25303B]/70">Programme</div>
+                  <div className="mt-1 text-base font-bold">{invite.programme_name}</div>
                 </div>
                 <div className="rounded-xl border border-black/10 bg-white/50 p-4">
-                  <div className="text-xs font-semibold text-[#25303B]/70">Invited email</div>
-                  <div className="mt-1 text-sm font-bold">{invite.invited_email}</div>
+                  <div className="text-base font-semibold text-[#25303B]/70">Invited email</div>
+                  <div className="mt-1 text-base font-bold">{invite.invited_email}</div>
                 </div>
               </div>
 
               {error && (
-                <div className="rounded-xl border border-[#E58B66]/40 bg-[#E58B66]/10 p-4 text-sm">
+                <div className="rounded-xl border border-[#E58B66]/40 bg-[#E58B66]/10 p-4 text-base">
                   {error}
                 </div>
               )}
 
               {success ? (
                 <div className="rounded-xl border border-[#E7B450]/50 bg-[#E7B450]/15 p-4">
-                  <div className="text-sm font-extrabold">
+                  <div className="text-base font-extrabold">
                     {appAccess === "pending"
                       ? appDownloadCopy.pendingTitle
                       : appDownloadCopy.accountReadyTitle}
@@ -232,30 +237,30 @@ export default function InviteActivateClient({
                 <>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="block">
-                      <span className="text-sm font-semibold">First name</span>
+                      <span className="text-base font-semibold">First name</span>
                       <input
                         type="text"
                         autoComplete="given-name"
                         value={firstName}
                         onChange={(event) => setFirstName(event.target.value)}
                         disabled={submitting}
-                        className="mt-2 w-full rounded-xl border border-black/10 bg-white px-3 py-3 text-sm outline-none ring-[#A6D5CE] focus:ring-2"
+                        className="mt-2 w-full rounded-xl border border-black/10 bg-white px-3 py-3 text-base outline-none ring-[#A6D5CE] focus:ring-2"
                       />
                     </label>
                     <label className="block">
-                      <span className="text-sm font-semibold">Last name</span>
+                      <span className="text-base font-semibold">Last name</span>
                       <input
                         type="text"
                         autoComplete="family-name"
                         value={lastName}
                         onChange={(event) => setLastName(event.target.value)}
                         disabled={submitting}
-                        className="mt-2 w-full rounded-xl border border-black/10 bg-white px-3 py-3 text-sm outline-none ring-[#A6D5CE] focus:ring-2"
+                        className="mt-2 w-full rounded-xl border border-black/10 bg-white px-3 py-3 text-base outline-none ring-[#A6D5CE] focus:ring-2"
                       />
                     </label>
                   </div>
                   {invite.ask_consent && consentChoice === "no" && (
-                    <div className="rounded-xl border border-black/10 bg-white/70 p-4 text-sm text-[#25303B]/80">
+                    <div className="rounded-xl border border-black/10 bg-white/70 p-4 text-base text-[#25303B]/80">
                       You can leave the name boxes blank. You do not need to
                       share your name if you do not want your organisation to
                       see you by name.
@@ -264,16 +269,16 @@ export default function InviteActivateClient({
 
                   {invite.ask_consent && (
                     <fieldset className="space-y-3">
-                      <legend className="text-sm font-semibold">
+                      <legend className="text-base font-semibold">
                         Named reporting
                       </legend>
-                      <p className="text-sm text-[#25303B]/80">
+                      <p className="text-base text-[#25303B]/80">
                         Your organisation can always see anonymised group
                         results for this programme. If you agree, authorised
                         staff can also see your name and activity. This is
                         optional. You still get Wobble if you say no.
                       </p>
-                      <label className="flex items-start gap-3 rounded-xl border border-black/10 bg-white/70 p-3 text-sm">
+                      <label className="flex items-start gap-3 rounded-xl border border-black/10 bg-white/70 p-3 text-base">
                         <input
                           type="radio"
                           name="reporting-consent"
@@ -286,7 +291,7 @@ export default function InviteActivateClient({
                           Yes — show my name and activity to my organisation
                         </span>
                       </label>
-                      <label className="flex items-start gap-3 rounded-xl border border-black/10 bg-white/70 p-3 text-sm">
+                      <label className="flex items-start gap-3 rounded-xl border border-black/10 bg-white/70 p-3 text-base">
                         <input
                           type="radio"
                           name="reporting-consent"
@@ -303,36 +308,36 @@ export default function InviteActivateClient({
                   )}
 
                   <label className="block">
-                    <span className="text-sm font-semibold">Password</span>
+                    <span className="text-base font-semibold">Password</span>
                     <input
                       type="password"
                       minLength={8}
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
                       disabled={submitting}
-                      className="mt-2 w-full rounded-xl border border-black/10 bg-white px-3 py-3 text-sm outline-none ring-[#A6D5CE] focus:ring-2"
+                      className="mt-2 w-full rounded-xl border border-black/10 bg-white px-3 py-3 text-base outline-none ring-[#A6D5CE] focus:ring-2"
                     />
                   </label>
                   <label className="block">
-                    <span className="text-sm font-semibold">Re-enter password</span>
+                    <span className="text-base font-semibold">Re-enter password</span>
                     <input
                       type="password"
                       minLength={8}
                       value={confirmPassword}
                       onChange={(event) => setConfirmPassword(event.target.value)}
                       disabled={submitting}
-                      className="mt-2 w-full rounded-xl border border-black/10 bg-white px-3 py-3 text-sm outline-none ring-[#A6D5CE] focus:ring-2"
+                      className="mt-2 w-full rounded-xl border border-black/10 bg-white px-3 py-3 text-base outline-none ring-[#A6D5CE] focus:ring-2"
                     />
                   </label>
                   <button
                     type="button"
                     onClick={handleContinue}
                     disabled={submitting}
-                    className="rounded-xl bg-[#25303B] px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                    className="rounded-xl bg-[#25303B] px-4 py-3 text-base font-semibold text-white disabled:opacity-60"
                   >
                     {submitting ? "Activating…" : "Activate with this email"}
                   </button>
-                  <p className="text-xs text-[#25303B]/70">
+                  <p className="text-sm text-[#25303B]/70">
                     The existing campaign activation links are unchanged. This
                     invitation only works for {invite.invited_email}.
                   </p>

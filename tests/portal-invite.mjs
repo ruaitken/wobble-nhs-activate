@@ -232,7 +232,7 @@ test("after activate, patients are told to log in on a phone or tablet", () => {
     path.join(process.cwd(), "lib/portal/inviteEmail.ts"),
     "utf8"
   );
-  assert.ok(copy.includes("Do not tap Get started"));
+  assert.ok(copy.includes("Do not tap Create an account"));
   assert.ok(copy.includes("junk or spam"));
   assert.ok(copy.includes("phone or tablet"));
   assert.ok(pack.includes("appDownloadCopy"));

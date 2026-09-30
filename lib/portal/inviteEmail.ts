@@ -74,8 +74,8 @@ export function buildInviteEmail({
     `App Store: ${APP_STORE_URL}`,
     `Google Play: ${GOOGLE_PLAY_URL}`,
     "",
-    "3. Log in. Do not tap Get started",
-    appDownloadCopy.logInNotGetStarted,
+    "3. Tap Log in. Do not tap Create an account",
+    appDownloadCopy.logInNotCreateAccount,
     signInWithEmailCopy(),
     "",
     "Information pack:",
@@ -97,50 +97,50 @@ export function buildInviteEmail({
           <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;">
             <tr>
               <td style="padding:0 8px 24px;font-family:Arial,Helvetica,sans-serif;color:#25303B;">
-                <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Wobble</div>
-                <div style="margin-top:10px;font-size:28px;line-height:1.25;font-weight:800;">Your place is ready</div>
+                <div style="font-size:15px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Wobble</div>
+                <div style="margin-top:10px;font-size:32px;line-height:1.25;font-weight:800;">Your place is ready</div>
               </td>
             </tr>
             <tr>
               <td style="background:#F9F5EF;border-radius:20px;padding:32px 28px;font-family:Arial,Helvetica,sans-serif;color:#25303B;">
-                <p style="margin:0 0 16px;font-size:16px;line-height:1.55;">
+                <p style="margin:0 0 16px;font-size:18px;line-height:1.55;">
                   You're invited to join <strong>${safeProgramme}</strong>.
                 </p>
-                <p style="margin:0 0 24px;font-size:15px;line-height:1.6;">
+                <p style="margin:0 0 24px;font-size:17px;line-height:1.6;">
                   Your organisation has reserved a place for you. Wobble is a strength and balance programme. Use the same email address this pack was sent to.
                 </p>
                 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 12px;">
                   <tr>
                     <td style="background:#25303B;border-radius:12px;">
-                      <a href="${safeActivateUrl}" style="display:inline-block;padding:14px 22px;color:#F9F5EF;text-decoration:none;font-size:15px;font-weight:700;">
+                      <a href="${safeActivateUrl}" style="display:inline-block;padding:16px 24px;color:#F9F5EF;text-decoration:none;font-size:17px;font-weight:700;">
                         Activate your Wobble place
                       </a>
                     </td>
                   </tr>
                 </table>
-                <p style="margin:0 0 28px;font-size:13px;line-height:1.5;color:#25303B;">
-                  This link expires in 14 days. ${escapeHtml(appDownloadCopy.checkJunk)} If the button does not work, copy this address:<br />
+                <p style="margin:0 0 28px;font-size:15px;line-height:1.5;color:#25303B;">
+                  This link expires in 14 days. ${appDownloadCopy.checkJunkHtml} If the button does not work, copy this address:<br />
                   <a href="${safeActivateUrl}" style="color:#25303B;word-break:break-all;">${safeActivateUrl}</a>
                 </p>
-                <p style="margin:0 0 8px;font-size:14px;font-weight:700;">Then download the app on your phone or tablet</p>
-                <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">
-                  ${escapeHtml(appDownloadCopy.downloadOnDevice)}<br /><br />
+                <p style="margin:0 0 8px;font-size:16px;font-weight:700;">Then download the app on your phone or tablet</p>
+                <p style="margin:0 0 20px;font-size:17px;line-height:1.6;">
+                  ${appDownloadCopy.downloadOnDeviceHtml}<br /><br />
                   <a href="${APP_STORE_URL}" style="color:#25303B;font-weight:700;">App Store</a>
                   &nbsp;&nbsp;·&nbsp;&nbsp;
                   <a href="${GOOGLE_PLAY_URL}" style="color:#25303B;font-weight:700;">Google Play</a>
                 </p>
-                <p style="margin:0 0 8px;font-size:14px;font-weight:700;">Log in. Do not tap Get started</p>
-                <p style="margin:0 0 24px;font-size:15px;line-height:1.6;">
-                  ${escapeHtml(appDownloadCopy.logInNotGetStarted)} ${escapeHtml(signInWithEmailCopy())}
+                <p style="margin:0 0 8px;font-size:16px;font-weight:700;">Tap Log in. Do not tap Create an account</p>
+                <p style="margin:0 0 24px;font-size:17px;line-height:1.6;">
+                  ${appDownloadCopy.logInNotCreateAccountHtml} ${escapeHtml(signInWithEmailCopy())}
                 </p>
-                <p style="margin:0;font-size:14px;line-height:1.6;">
+                <p style="margin:0;font-size:16px;line-height:1.6;">
                   Read the information pack:
                   <a href="${safePackUrl}" style="color:#25303B;font-weight:700;">${safePackUrl}</a>
                 </p>
               </td>
             </tr>
             <tr>
-              <td style="padding:20px 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.55;color:#25303B;">
+                <td style="padding:20px 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#25303B;">
                 Questions? Email <a href="mailto:${SUPPORT_EMAIL}" style="color:#25303B;">${SUPPORT_EMAIL}</a>.
                 If you were not expecting this, you can ignore this email.
               </td>

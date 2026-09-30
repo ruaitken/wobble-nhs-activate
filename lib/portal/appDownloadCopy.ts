@@ -12,12 +12,18 @@ export const appDownloadCopy = {
     "App access is being finished. You can download the app now, then sign in shortly.",
   checkJunk:
     "If you cannot find the invitation email, look in junk or spam.",
+  checkJunkHtml:
+    "If you cannot find the invitation email, look in <strong>junk or spam</strong>.",
   downloadOnDevice:
     "Download the Wobble app on your phone or tablet, not on a laptop. iPhone: App Store. Android: Google Play. Use only the store for your phone.",
-  logInNotGetStarted:
-    "Open the app and tap Log in or I already have an account. Do not tap Get started.",
+  downloadOnDeviceHtml:
+    "Download the Wobble app on your <strong>phone or tablet</strong>, not on a laptop. iPhone: App Store. Android: Google Play. Use only the store for your phone.",
+  logInNotCreateAccount:
+    "Open the app and tap Log in. Do not tap Create an account.",
+  logInNotCreateAccountHtml:
+    "Open the app and tap <strong>Log in</strong>. <strong>Do not tap Create an account</strong>.",
   alreadyActivated:
-    "Your place is already activated. Open the Wobble app on your phone or tablet and tap Log in or I already have an account. Do not tap Get started.",
+    "Your place is already activated. Open the Wobble app on your phone or tablet and tap Log in. Do not tap Create an account.",
 };
 
 export function signInWithEmailCopy(email?: string) {
