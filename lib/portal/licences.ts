@@ -379,6 +379,15 @@ export async function completeInvitation({
     throw new LicenceError(400, "missing_name");
   }
 
+  const existingClaim = await getClaim(invitation.campaign_id, auth.user.id);
+  if (
+    existingClaim?.expires_at &&
+    Date.parse(existingClaim.expires_at) <= Date.now()
+  ) {
+    // One claim per person per programme holds one funded window.
+    throw new LicenceError(409, "place_already_used");
+  }
+
   if (namesAreValid(firstName, lastName)) {
     await saveProfileNames({
       userId: auth.user.id,
@@ -387,7 +396,6 @@ export async function completeInvitation({
     });
   }
 
-  const existingClaim = await getClaim(invitation.campaign_id, auth.user.id);
   const expiresAt = existingClaim?.expires_at
     ? new Date(existingClaim.expires_at)
     : campaign.claim_duration_days

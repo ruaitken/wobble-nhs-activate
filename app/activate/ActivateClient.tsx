@@ -227,14 +227,14 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
         <header className="mb-7">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_auto] sm:items-start">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-[#F9F5EF]/70 px-3 py-1 text-xs font-semibold tracking-wide ring-1 ring-black/5">
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#F9F5EF]/70 px-3 py-1 text-sm font-semibold tracking-wide ring-1 ring-black/5">
                 <span className="h-2 w-2 rounded-full bg-[#E58B66]" />
                 {headerPillLabel}
               </div>
-              <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
+              <h1 className="mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl">
                 {pageTitle}
               </h1>
-              <p className="mt-2 max-w-prose text-sm text-[#25303B]/80 sm:text-base">
+              <p className="mt-2 max-w-prose text-base text-[#25303B]/80 sm:text-lg">
                 We’ll verify your link, sign you up, and activate access.
               </p>
             </div>
@@ -422,9 +422,9 @@ export default function ActivateClient({ fontClassName }: { fontClassName: strin
                     role="status"
                     aria-live="polite"
                   >
-                    <div className="text-sm font-extrabold">{result.title}</div>
+                    <div className="text-base font-extrabold">{result.title}</div>
                     {activationStatus !== "success" && (
-                      <div className="mt-1 text-sm text-[#25303B]/80">{result.message}</div>
+                      <div className="mt-1 text-base text-[#25303B]/80">{result.message}</div>
                     )}
 
                     {activationStatus === "success" && (
