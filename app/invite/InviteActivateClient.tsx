@@ -141,6 +141,12 @@ export default function InviteActivateClient({
           setError("Please choose whether your organisation can see you by name.");
           return;
         }
+        if (body.reason === "place_already_used") {
+          setError(
+            "You have already used a place on this programme. Ask your organisation about a place on a new programme."
+          );
+          return;
+        }
         setError("We could not activate this place. Please try again.");
         return;
       }

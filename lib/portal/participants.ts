@@ -7,7 +7,10 @@ import {
   averageWeeklyMinutes,
   latestDate,
   latestWeekMinutes,
+  sessionDatesInWindow,
   sumWeeklyMinutes,
+  weeklyMinutesInWindow,
+  type ClaimWindow,
   type ParticipantSnapshot,
   type PortalParticipant,
 } from "@/lib/portal/participantView";
@@ -43,11 +46,17 @@ export async function getPortalParticipants(
   const admin = getSupabaseServer();
   const { data: claims, error: claimError } = await admin
     .from("nhs_claims")
-    .select("user_id")
+    .select("user_id, claimed_at, expires_at")
     .eq("campaign_id", campaignId);
   if (claimError) throw claimError;
 
   const userIds = (claims ?? []).map((claim) => claim.user_id).filter(Boolean);
+  const windowByUser = new Map<string, ClaimWindow>(
+    (claims ?? []).map((claim) => [
+      claim.user_id,
+      { claimedAt: claim.claimed_at ?? null, expiresAt: claim.expires_at ?? null },
+    ])
+  );
   if (userIds.length === 0) {
     return { campaign_id: campaignId, shown: 0, hidden: 0, participants: [] };
   }
@@ -95,16 +104,19 @@ export async function getPortalParticipants(
     .map((userId) => {
       const meta = metaByUser.get(userId);
       const row = activityByUser.get(userId);
+      const window = windowByUser.get(userId) ?? { claimedAt: null, expiresAt: null };
+      const weeks = weeklyMinutesInWindow(row?.weekly_minutes, window);
+      const sessions = sessionDatesInWindow(row?.exercise_dates, window);
       return {
         id: displayParticipantId(userId),
         first_name: meta?.first_name?.trim() || "Member",
         last_name: meta?.last_name?.trim() || "",
-        minutes_this_week: latestWeekMinutes(row?.weekly_minutes),
-        total_minutes: sumWeeklyMinutes(row?.weekly_minutes),
-        average_weekly_minutes: averageWeeklyMinutes(row?.weekly_minutes),
-        average_sessions_per_week: averageSessionsPerWeek(row?.exercise_dates),
-        last_session: latestDate(row?.exercise_dates),
-        assessments: assessmentsFromRows(assessmentsByUser.get(userId) ?? []),
+        minutes_this_week: latestWeekMinutes(weeks),
+        total_minutes: sumWeeklyMinutes(weeks),
+        average_weekly_minutes: averageWeeklyMinutes(weeks),
+        average_sessions_per_week: averageSessionsPerWeek(sessions),
+        last_session: latestDate(sessions),
+        assessments: assessmentsFromRows(assessmentsByUser.get(userId) ?? [], window),
       };
     })
     .sort((a, b) => {

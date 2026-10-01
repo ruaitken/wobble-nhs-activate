@@ -130,13 +130,22 @@ async function upsertUser(email) {
   return body.id;
 }
 
+function isoWeekKey(date) {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-${String(week).padStart(2, "0")}`;
+}
+
 function weekKeys(count) {
   const keys = [];
   const start = new Date("2026-01-05T00:00:00Z");
   for (let i = 0; i < count; i += 1) {
     const d = new Date(start);
     d.setUTCDate(start.getUTCDate() + i * 7);
-    keys.push(d.toISOString().slice(0, 10));
+    keys.push(isoWeekKey(d));
   }
   return keys;
 }
@@ -200,6 +209,8 @@ for (const member of MEMBERS) {
       campaign_id: member.campaign,
       user_id: userId,
       status: "active",
+      claimed_at: "2026-01-05T09:00:00Z",
+      expires_at: "2026-12-31T23:59:59Z",
       first_name: member.consent === false ? "" : member.first,
       last_name: member.consent === false ? "" : member.last,
     },

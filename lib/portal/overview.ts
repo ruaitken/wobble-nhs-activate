@@ -19,7 +19,7 @@ function hasForbiddenKey(value: unknown): boolean {
 
 export async function getPortalCampaignStats(campaignId: string) {
   const admin = getSupabaseServer();
-  const { data, error } = await admin.rpc("get_campaign_stats", {
+  const { data, error } = await admin.rpc("get_portal_campaign_stats", {
     p_campaign_id: campaignId,
   });
   if (error) throw error;

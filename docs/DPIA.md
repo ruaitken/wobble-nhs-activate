@@ -275,7 +275,10 @@ Apple and Google are linked as app download URLs only (`lib/portal/inviteEmail.t
 - If named-reporting consent is still on, the commissioning service can still open them as an **individual** after access expires. Their activity also stays in **Overview** totals. That is how the service reviews the year.
 - They drop out of the **individual** view only if they **withdraw consent** (in-app Settings toggle while they still have access, calling this website's consent API, or an exception request to `enquiries@wobblebalance.com` after they can no longer open the app). Overview totals still include them.
 - **Erasure** (remove from the database) is a separate rights request to the same inbox, handled case by case. It is not automatic at entitlement end. Anonymised programme totals may be kept so year-end reporting does not break.
-- The Participants query today selects all `nhs_claims` for the campaign and does not filter on `expires_at` (`lib/portal/participants.ts`). The intended position matches current code: expiry does not remove the named row.
+- The person stays on the programme after expiry, but their activity is **capped to the funded window** (agreed 1 October 2026). Portal Overview (`get_portal_campaign_stats`, `supabase/migrations/20261001100000_portal_capped_campaign_stats.sql`) and Participants (`lib/portal/participants.ts`) count only activity between `nhs_claims.claimed_at` and `nhs_claims.expires_at`. If they carry on with their own subscription on the same login, new activity after that date is not shown to the organisation.
+- Minutes are stored per week, so a week that overlaps the start or end of the window counts in full. Sessions count only on days inside the window. Assessment baseline is the latest assessment on or before activation, otherwise the first one inside the window. The comparison is the latest later assessment inside the window.
+- A later programme on the same login (for example the following year) has its own claim and its own window, so earlier or self-funded activity does not carry into it. Re-activating an ended place on the same programme is refused (`place_already_used` in `lib/portal/licences.ts`).
+- Legacy token dashboards still use the uncapped `get_campaign_stats`.
 
 A published retention clock (when records are later deleted or anonymised) is still GAP.
 
