@@ -61,6 +61,14 @@ test("named APIs and the Wobble desk require a completed authenticator", () => {
     path.join(process.cwd(), "app/auth/callback/route.ts"),
     "utf8"
   );
+  const confirm = readFileSync(
+    path.join(process.cwd(), "app/api/auth/confirm/route.ts"),
+    "utf8"
+  );
+  const finishSignIn = readFileSync(
+    path.join(process.cwd(), "lib/portal/finishSignIn.ts"),
+    "utf8"
+  );
   const context = readFileSync(
     path.join(process.cwd(), "lib/portal/context.ts"),
     "utf8"
@@ -73,7 +81,9 @@ test("named APIs and the Wobble desk require a completed authenticator", () => {
   assert.ok(account.includes("requireSatisfiedMfa"));
   assert.ok(admin.includes("mfaPagePath"));
   assert.ok(admin.includes("MfaResetForm"));
-  assert.ok(callback.includes("sessionNeedsMfa"));
+  assert.ok(finishSignIn.includes("sessionNeedsMfa"));
+  assert.ok(callback.includes("destinationAfterSignIn"));
+  assert.ok(confirm.includes("destinationAfterSignIn"));
   assert.ok(context.includes("mfaSatisfied"));
 });
 

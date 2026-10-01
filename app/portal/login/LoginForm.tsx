@@ -54,7 +54,8 @@ export default function PortalLoginForm() {
       {sent && (
         <div className="rounded-xl border border-black/10 bg-white/70 p-4 text-sm">
           If this email is registered for the customer portal, we have sent a
-          sign-in link. It can be used once and expires after an hour.
+          sign-in link. Open the email and press Sign in. It can be used once
+          and expires after an hour.
         </div>
       )}
       <label className="block">

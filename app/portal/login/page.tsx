@@ -19,8 +19,8 @@ export default function PortalLoginPage() {
               Sign in
             </h1>
             <p className="mt-2 max-w-prose text-sm text-[#25303B]/80 sm:text-base">
-              We will email you a one-time link. Existing customer dashboard
-              links are unchanged and do not need this login.
+              We will email you a link. Open it and press Sign in. Existing
+              customer dashboard links are unchanged and do not need this login.
             </p>
           </div>
           <div className="inline-flex rounded-2xl bg-white/30 p-2 ring-1 ring-black/10">

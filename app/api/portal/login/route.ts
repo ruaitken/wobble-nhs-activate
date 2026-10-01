@@ -53,9 +53,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, message: GENERIC_SENT_MESSAGE });
   }
 
-  let applyCookies: ((response: NextResponse) => NextResponse) | null = null;
   try {
-    ({ applyCookies } = await sendPortalMagicLink({ request, email, next }));
+    await sendPortalMagicLink({ request, email, next });
   } catch {
     return NextResponse.json({ ok: true, message: GENERIC_SENT_MESSAGE });
   }
@@ -67,7 +66,5 @@ export async function POST(request: Request) {
     details: { email },
   });
 
-  return (applyCookies ?? ((response: NextResponse) => response))(
-    NextResponse.json({ ok: true, message: GENERIC_SENT_MESSAGE })
-  );
+  return NextResponse.json({ ok: true, message: GENERIC_SENT_MESSAGE });
 }
