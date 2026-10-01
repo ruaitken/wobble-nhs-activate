@@ -1,6 +1,6 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { canSendInviteEmail, sendTransactionalEmail } from "@/lib/portal/inviteEmail";
-import { PORTAL_HOME_PATH, safePortalPath } from "@/lib/portal/paths";
+import { PORTAL_HOME_PATH, PORTAL_LOGIN_PATH, safePortalPath } from "@/lib/portal/paths";
 import { requestOrigin } from "@/lib/supabase/route";
 import { getSupabaseServer } from "@/lib/supabaseServer";
 
@@ -27,14 +27,19 @@ export function signInConfirmUrl(origin: string, tokenHash: string, next: string
 
 export function buildSignInEmail(confirmUrl: string) {
   const safeUrl = escapeHtml(confirmUrl);
+  const loginUrl = new URL(PORTAL_LOGIN_PATH, confirmUrl).toString();
+  const safeLoginUrl = escapeHtml(loginUrl);
   const subject = "Sign in to the Wobble customer portal";
   const text = [
     "Sign in to the Wobble customer portal.",
     "",
-    "Open this link and press Sign in. Opening the email is not enough.",
-    "The link expires in one hour and can be used once.",
+    "Open this link, then press Sign in on the page that opens. Opening the email is not enough.",
+    "The link lasts one hour and can be used once.",
     "",
     confirmUrl,
+    "",
+    "If the link has run out, go to the portal login page and enter your email to get a new one:",
+    loginUrl,
     "",
     "If you were not expecting this, you can ignore this email.",
   ].join("\n");
@@ -54,10 +59,10 @@ export function buildSignInEmail(confirmUrl: string) {
             <tr>
               <td style="background:#F9F5EF;border-radius:20px;padding:32px 28px;font-family:Arial,Helvetica,sans-serif;color:#25303B;">
                 <p style="margin:0 0 16px;font-size:17px;line-height:1.6;">
-                  Open this page and press Sign in. Opening the email is not enough.
+                  Press <strong>Continue to sign in</strong>, then press <strong>Sign in</strong> on the page that opens. Opening the email is not enough.
                 </p>
                 <p style="margin:0 0 24px;font-size:17px;line-height:1.6;">
-                  The link expires in one hour and can be used once.
+                  The link lasts one hour and can be used once.
                 </p>
                 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
                   <tr>
@@ -71,6 +76,9 @@ export function buildSignInEmail(confirmUrl: string) {
                 <p style="margin:0;font-size:15px;line-height:1.5;">
                   If the button does not work, copy this address:<br />
                   <a href="${safeUrl}" style="color:#25303B;word-break:break-all;">${safeUrl}</a>
+                </p>
+                <p style="margin:20px 0 0;font-size:15px;line-height:1.5;">
+                  If the link has run out, go to the <a href="${safeLoginUrl}" style="color:#25303B;">portal login page</a> and enter your email to get a new one.
                 </p>
               </td>
             </tr>

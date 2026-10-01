@@ -5,8 +5,10 @@ import { useSearchParams } from "next/navigation";
 import { safePortalPath } from "@/lib/portal/paths";
 
 const ERROR_MESSAGES: Record<string, string> = {
-  missing_code: "That sign-in link is missing information. Please request a new one.",
-  invalid_link: "That sign-in link is invalid or has already been used. Please request a new one.",
+  missing_code:
+    "That sign-in link did not open properly. Enter your email below to get a new one.",
+  invalid_link:
+    "That sign-in link has expired or has already been used. Links last one hour. Enter your email below to get a new one.",
 };
 
 export default function PortalLoginForm() {
@@ -54,8 +56,9 @@ export default function PortalLoginForm() {
       {sent && (
         <div className="rounded-xl border border-black/10 bg-white/70 p-4 text-sm">
           If this email is registered for the customer portal, we have sent a
-          sign-in link. Open the email and press Sign in. It can be used once
-          and expires after an hour.
+          sign-in link. Open the email, press Continue to sign in, then press
+          Sign in. The link lasts one hour. If it runs out, come back here for
+          a new one.
         </div>
       )}
       <label className="block">

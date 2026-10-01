@@ -60,7 +60,8 @@ export default async function ConfirmSignInPage({
           ) : (
             <div className="space-y-5">
               <div className="rounded-xl border border-[#E58B66]/40 bg-[#E58B66]/10 p-4 text-sm">
-                That sign-in link is missing information. Please request a new one.
+                That sign-in link did not open properly. Request a new one and
+                it will arrive by email.
               </div>
               <Link
                 href={PORTAL_LOGIN_PATH}

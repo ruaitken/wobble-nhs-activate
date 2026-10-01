@@ -15,6 +15,14 @@ test("portal sign-in email does not use the single-use Supabase link", () => {
   assert.equal(magicLink.includes("signInWithOtp"), false);
   assert.ok(magicLink.includes("unsafe_confirm_url"));
   assert.ok(magicLink.includes("Opening the email is not enough"));
+  assert.ok(magicLink.includes("If the link has run out"));
+  assert.ok(magicLink.includes("PORTAL_LOGIN_PATH"));
+});
+
+test("an expired link sends people back to request a new one", () => {
+  const form = source("app/portal/login/LoginForm.tsx");
+  assert.ok(form.includes("has expired or has already been used"));
+  assert.ok(form.includes("Enter your email below to get a new one"));
 });
 
 test("opening the confirm page does not check the token", () => {

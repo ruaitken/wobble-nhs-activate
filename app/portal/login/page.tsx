@@ -19,7 +19,8 @@ export default function PortalLoginPage() {
               Sign in
             </h1>
             <p className="mt-2 max-w-prose text-sm text-[#25303B]/80 sm:text-base">
-              We will email you a link. Open it and press Sign in. Existing
+              We will email you a link. Open it, press Continue to sign in,
+              then press Sign in. Existing
               customer dashboard links are unchanged and do not need this login.
             </p>
           </div>
