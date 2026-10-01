@@ -1,10 +1,91 @@
-import { createPortalRouteClient, requestOrigin } from "@/lib/supabase/route";
+import type { EmailOtpType } from "@supabase/supabase-js";
+import { canSendInviteEmail, sendTransactionalEmail } from "@/lib/portal/inviteEmail";
+import { PORTAL_HOME_PATH, safePortalPath } from "@/lib/portal/paths";
+import { requestOrigin } from "@/lib/supabase/route";
+import { getSupabaseServer } from "@/lib/supabaseServer";
+
+const OTP_TYPES = ["signup", "invite", "magiclink", "recovery", "email_change", "email"] as const;
 
 export function canSendPortalEmail() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const isLocal =
-    supabaseUrl.includes("127.0.0.1") || supabaseUrl.includes("localhost");
-  return isLocal || process.env.PORTAL_ALLOW_HOSTED_AUTH === "true";
+  return canSendInviteEmail();
+}
+
+export function portalOtpType(value: string | null | undefined): EmailOtpType {
+  if (value && (OTP_TYPES as readonly string[]).includes(value)) {
+    return value as EmailOtpType;
+  }
+  return "magiclink";
+}
+
+export function signInConfirmUrl(origin: string, tokenHash: string, next: string) {
+  const url = new URL("/auth/confirm", origin);
+  url.searchParams.set("token_hash", tokenHash);
+  url.searchParams.set("type", "magiclink");
+  url.searchParams.set("next", safePortalPath(next));
+  return url.toString();
+}
+
+export function buildSignInEmail(confirmUrl: string) {
+  const safeUrl = escapeHtml(confirmUrl);
+  const subject = "Sign in to the Wobble customer portal";
+  const text = [
+    "Sign in to the Wobble customer portal.",
+    "",
+    "Open this link and press Sign in. Opening the email is not enough.",
+    "The link expires in one hour and can be used once.",
+    "",
+    confirmUrl,
+    "",
+    "If you were not expecting this, you can ignore this email.",
+  ].join("\n");
+  const html = `<!DOCTYPE html>
+<html lang="en">
+  <body style="margin:0;padding:0;background:#A6D5CE;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#A6D5CE;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;">
+            <tr>
+              <td style="padding:0 8px 24px;font-family:Arial,Helvetica,sans-serif;color:#25303B;">
+                <div style="font-size:15px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Wobble</div>
+                <div style="margin-top:10px;font-size:32px;line-height:1.25;font-weight:800;">Sign in</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#F9F5EF;border-radius:20px;padding:32px 28px;font-family:Arial,Helvetica,sans-serif;color:#25303B;">
+                <p style="margin:0 0 16px;font-size:17px;line-height:1.6;">
+                  Open this page and press Sign in. Opening the email is not enough.
+                </p>
+                <p style="margin:0 0 24px;font-size:17px;line-height:1.6;">
+                  The link expires in one hour and can be used once.
+                </p>
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+                  <tr>
+                    <td style="background:#25303B;border-radius:12px;">
+                      <a href="${safeUrl}" style="display:inline-block;padding:16px 24px;color:#F9F5EF;text-decoration:none;font-size:17px;font-weight:700;">
+                        Continue to sign in
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:0;font-size:15px;line-height:1.5;">
+                  If the button does not work, copy this address:<br />
+                  <a href="${safeUrl}" style="color:#25303B;word-break:break-all;">${safeUrl}</a>
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#25303B;">
+                If you were not expecting this, you can ignore this email.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+  return { subject, text, html };
 }
 
 export async function sendPortalMagicLink({
@@ -16,14 +97,36 @@ export async function sendPortalMagicLink({
   email: string;
   next: string;
 }) {
-  const { supabase, applyCookies } = await createPortalRouteClient();
-  const { error } = await supabase.auth.signInWithOtp({
+  if (!canSendPortalEmail()) {
+    throw new Error("email_unavailable");
+  }
+
+  const origin = requestOrigin(request);
+  const admin = getSupabaseServer();
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "magiclink",
     email,
-    options: {
-      shouldCreateUser: false,
-      emailRedirectTo: `${requestOrigin(request)}/auth/callback?next=${encodeURIComponent(next)}`,
-    },
+    options: { redirectTo: `${origin}/auth/confirm` },
   });
   if (error) throw error;
-  return { applyCookies };
+
+  const tokenHash = data.properties?.hashed_token;
+  if (!tokenHash) throw new Error("missing_token");
+
+  const confirmUrl = signInConfirmUrl(origin, tokenHash, next || PORTAL_HOME_PATH);
+  if (confirmUrl.includes("/auth/v1/verify")) {
+    throw new Error("unsafe_confirm_url");
+  }
+
+  const message = buildSignInEmail(confirmUrl);
+  await sendTransactionalEmail({ to: email, ...message });
+  return { confirmUrl };
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }

@@ -174,9 +174,24 @@ export async function sendInviteEmail({
     packUrl,
   });
 
+  await sendTransactionalEmail({ to, subject, text, html });
+  return { activateUrl, packUrl };
+}
+
+export async function sendTransactionalEmail({
+  to,
+  subject,
+  text,
+  html,
+}: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+}) {
   if (canUseResend()) {
     await sendWithResend({ to, subject, text, html });
-    return { activateUrl, packUrl };
+    return;
   }
 
   const inbox = mailpitUrl();
@@ -200,8 +215,6 @@ export async function sendInviteEmail({
   if (!response.ok) {
     throw new Error("invite_email_failed");
   }
-
-  return { activateUrl, packUrl };
 }
 
 async function sendWithResend({
