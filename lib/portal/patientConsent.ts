@@ -4,6 +4,12 @@ import {
   parseConsentChoice,
   setReportingConsent,
 } from "@/lib/portal/inviteProfile";
+import {
+  currentAccess,
+  patientProgrammeName,
+  sortAccessProgrammes,
+  type AccessProgramme,
+} from "@/lib/portal/accessProgrammes";
 
 export class PatientConsentError extends Error {
   constructor(
@@ -25,6 +31,8 @@ export type PatientConsentState = {
   show_toggle: boolean;
   consented: boolean | null;
   programmes: PatientConsentProgramme[];
+  access_programmes: AccessProgramme[];
+  current_access: AccessProgramme | null;
 };
 
 export function bearerAccessToken(request: Request) {
@@ -47,7 +55,7 @@ export async function getPatientReportingConsent(
   const admin = getSupabaseServer();
   const { data: claims, error: claimError } = await admin
     .from("nhs_claims")
-    .select("campaign_id")
+    .select("campaign_id, claimed_at, expires_at")
     .eq("user_id", userId);
   if (claimError) throw claimError;
 
@@ -60,6 +68,8 @@ export async function getPatientReportingConsent(
       show_toggle: false,
       consented: null,
       programmes: [],
+      access_programmes: [],
+      current_access: null,
     };
   }
 
@@ -67,7 +77,7 @@ export async function getPatientReportingConsent(
     await Promise.all([
       admin
         .from("nhs_campaigns")
-        .select("id, service_name, org_id")
+        .select("id, service_name, trust_name, org_id")
         .in("id", campaignIds),
       admin
         .from("portal_programme_entitlements")
@@ -113,11 +123,49 @@ export async function getPatientReportingConsent(
     ];
   });
 
+  const orgIds = [
+    ...new Set((campaigns ?? []).map((campaign) => campaign.org_id).filter(Boolean)),
+  ];
+  const { data: orgs, error: orgError } = orgIds.length
+    ? await admin.from("dashboard_orgs").select("org_id, org_name").in("org_id", orgIds)
+    : { data: [], error: null };
+  if (orgError) throw orgError;
+
+  const orgNames = new Map((orgs ?? []).map((org) => [org.org_id, org.org_name]));
+  const campaignById = new Map((campaigns ?? []).map((campaign) => [campaign.id, campaign]));
+  const toggleIds = new Set(programmes.map((item) => item.campaign_id));
+
+  const accessProgrammes = sortAccessProgrammes(
+    (claims ?? []).flatMap((claim) => {
+      const campaign = campaignById.get(claim.campaign_id);
+      if (!campaign) return [];
+      const named = toggleIds.has(campaign.id);
+      return [
+        {
+          campaign_id: campaign.id,
+          programme_name: patientProgrammeName(campaign.service_name, campaign.id),
+          org_name:
+            (campaign.org_id ? orgNames.get(campaign.org_id) : null) ??
+            campaign.trust_name ??
+            null,
+          access_starts_at: claim.claimed_at ?? null,
+          access_ends_at: claim.expires_at ?? null,
+          named_reporting: named,
+          consented: named
+            ? isNamedReportingVisible(consentByCampaign.get(campaign.id) ?? null)
+            : null,
+        },
+      ];
+    })
+  );
+
   return {
     campaign_member: true,
     show_toggle: programmes.length > 0,
     consented: programmes.length > 0 ? programmes.some((item) => item.consented) : null,
     programmes,
+    access_programmes: accessProgrammes,
+    current_access: currentAccess(accessProgrammes),
   };
 }
 
