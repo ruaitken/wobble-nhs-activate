@@ -9,7 +9,11 @@ import {
   programmePath,
   type PortalTab,
 } from "@/lib/portal/paths";
-import { canViewOrgOperations, hasWobbleAdminAccess } from "@/lib/portal/roles";
+import {
+  canViewNamedParticipants,
+  canViewOrgOperations,
+  hasWobbleAdminAccess,
+} from "@/lib/portal/roles";
 import { mfaPagePath, mfaSatisfied } from "@/lib/portal/mfa";
 import type { PortalMembership } from "@/lib/portal/membership";
 import type { PortalSession } from "@/lib/portal/session";
@@ -57,7 +61,12 @@ export async function loadPortalContext(
   const membership = session.memberships.find((item) => item.org_id === orgId);
   if (!membership) redirect(PORTAL_HOME_PATH);
 
-  if (tab !== "overview" && !canViewOrgOperations(membership.role)) {
+  const allowed =
+    tab === "overview" ||
+    (tab === "participants"
+      ? canViewNamedParticipants(membership.role)
+      : canViewOrgOperations(membership.role));
+  if (!allowed) {
     redirect(programmePath(orgId, selected.campaign_id, "overview"));
   }
 

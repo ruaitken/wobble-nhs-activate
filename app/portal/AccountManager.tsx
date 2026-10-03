@@ -142,7 +142,9 @@ export default function AccountManager({
         <h3 className="text-lg font-bold">People</h3>
         <p className="mt-2 text-sm text-[#25303B]/80">
           Administrators can invite colleagues and choose whether they can
-          manage the organisation or only view it.
+          manage the organisation or only view it. Viewers can see Overview
+          and, on Premium programmes, named participants. They cannot send
+          licences or add people.
         </p>
       </div>
 

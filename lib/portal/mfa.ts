@@ -1,12 +1,11 @@
 import { getSupabaseServer } from "@/lib/supabaseServer";
-import { canViewOrgOperations } from "@/lib/portal/roles";
 import { PORTAL_MFA_PATH } from "@/lib/portal/paths";
 import type { PortalMembership } from "@/lib/portal/membership";
 
 export { PORTAL_MFA_PATH };
 
 export function sessionNeedsMfa(memberships: Array<{ role: PortalMembership["role"] }>) {
-  return memberships.some((membership) => canViewOrgOperations(membership.role));
+  return memberships.length > 0;
 }
 
 export function parseAal(value: unknown): "aal1" | "aal2" {

@@ -25,25 +25,22 @@ export function signInConfirmUrl(origin: string, tokenHash: string, next: string
   return url.toString();
 }
 
-export function buildSignInEmail(confirmUrl: string) {
-  const safeUrl = escapeHtml(confirmUrl);
-  const loginUrl = new URL(PORTAL_LOGIN_PATH, confirmUrl).toString();
+export function portalEmailHtml({
+  heading,
+  introHtml,
+  detail,
+  url,
+  loginUrl,
+}: {
+  heading: string;
+  introHtml: string;
+  detail: string;
+  url: string;
+  loginUrl: string;
+}) {
+  const safeUrl = escapeHtml(url);
   const safeLoginUrl = escapeHtml(loginUrl);
-  const subject = "Sign in to the Wobble customer portal";
-  const text = [
-    "Sign in to the Wobble customer portal.",
-    "",
-    "Open this link, then press Sign in on the page that opens. Opening the email is not enough.",
-    "The link lasts one hour and can be used once.",
-    "",
-    confirmUrl,
-    "",
-    "If the link has run out, go to the portal login page and enter your email to get a new one:",
-    loginUrl,
-    "",
-    "If you were not expecting this, you can ignore this email.",
-  ].join("\n");
-  const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
   <body style="margin:0;padding:0;background:#A6D5CE;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#A6D5CE;">
@@ -53,16 +50,16 @@ export function buildSignInEmail(confirmUrl: string) {
             <tr>
               <td style="padding:0 8px 24px;font-family:Arial,Helvetica,sans-serif;color:#25303B;">
                 <div style="font-size:15px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Wobble</div>
-                <div style="margin-top:10px;font-size:32px;line-height:1.25;font-weight:800;">Sign in</div>
+                <div style="margin-top:10px;font-size:32px;line-height:1.25;font-weight:800;">${escapeHtml(heading)}</div>
               </td>
             </tr>
             <tr>
               <td style="background:#F9F5EF;border-radius:20px;padding:32px 28px;font-family:Arial,Helvetica,sans-serif;color:#25303B;">
                 <p style="margin:0 0 16px;font-size:17px;line-height:1.6;">
-                  Press <strong>Continue to sign in</strong>, then press <strong>Sign in</strong> on the page that opens. Opening the email is not enough.
+                  ${introHtml}
                 </p>
                 <p style="margin:0 0 24px;font-size:17px;line-height:1.6;">
-                  The link lasts one hour and can be used once.
+                  ${escapeHtml(detail)}
                 </p>
                 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
                   <tr>
@@ -93,7 +90,50 @@ export function buildSignInEmail(confirmUrl: string) {
     </table>
   </body>
 </html>`;
+}
+
+export function portalLoginUrl(url: string) {
+  return new URL(PORTAL_LOGIN_PATH, url).toString();
+}
+
+export function buildSignInEmail(confirmUrl: string) {
+  const loginUrl = portalLoginUrl(confirmUrl);
+  const subject = "Sign in to the Wobble customer portal";
+  const text = [
+    "Sign in to the Wobble customer portal.",
+    "",
+    "Open this link, then press Sign in on the page that opens. Opening the email is not enough.",
+    "The link lasts one hour and can be used once.",
+    "",
+    confirmUrl,
+    "",
+    "If the link has run out, go to the portal login page and enter your email to get a new one:",
+    loginUrl,
+    "",
+    "If you were not expecting this, you can ignore this email.",
+  ].join("\n");
+  const html = portalEmailHtml({
+    heading: "Sign in",
+    introHtml:
+      "Press <strong>Continue to sign in</strong>, then press <strong>Sign in</strong> on the page that opens. Opening the email is not enough.",
+    detail: "The link lasts one hour and can be used once.",
+    url: confirmUrl,
+    loginUrl,
+  });
   return { subject, text, html };
+}
+
+export async function generateSignInTokenHash(origin: string, email: string) {
+  const admin = getSupabaseServer();
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "magiclink",
+    email,
+    options: { redirectTo: `${origin}/auth/confirm` },
+  });
+  if (error) throw error;
+  const tokenHash = data.properties?.hashed_token;
+  if (!tokenHash) throw new Error("missing_token");
+  return tokenHash;
 }
 
 export async function sendPortalMagicLink({
@@ -110,16 +150,7 @@ export async function sendPortalMagicLink({
   }
 
   const origin = requestOrigin(request);
-  const admin = getSupabaseServer();
-  const { data, error } = await admin.auth.admin.generateLink({
-    type: "magiclink",
-    email,
-    options: { redirectTo: `${origin}/auth/confirm` },
-  });
-  if (error) throw error;
-
-  const tokenHash = data.properties?.hashed_token;
-  if (!tokenHash) throw new Error("missing_token");
+  const tokenHash = await generateSignInTokenHash(origin, email);
 
   const confirmUrl = signInConfirmUrl(origin, tokenHash, next || PORTAL_HOME_PATH);
   if (confirmUrl.includes("/auth/v1/verify")) {
@@ -131,7 +162,7 @@ export async function sendPortalMagicLink({
   return { confirmUrl };
 }
 
-function escapeHtml(value: string) {
+export function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")

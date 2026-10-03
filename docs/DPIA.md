@@ -48,7 +48,7 @@ Consent wording on the invitation page is explicitly a draft, not legally review
 Commissioning staff (browser)
   -> HTTPS Vercel app (wobble-account-activate-9i2r)
   -> /portal/login (magic link) OR existing /dashboard/{token} (no login)
-  -> Administrators complete TOTP (aal2) before named lists or the Wobble desk
+  -> Every staff member completes TOTP (aal2) before named lists, admin tools or the Wobble desk
   -> /api/portal/* using SUPABASE_SERVICE_ROLE_KEY
   -> Postgres: membership and role check, then campaign-scoped reads
 
@@ -66,7 +66,7 @@ Patient invitation (Premium path)
 Named dashboard read
   GET /api/portal/participants?org_id=&campaign_id=
   -> requireProgrammeAccess (must be member of that org; campaign must belong to org)
-  -> customer_admin or wobble_admin only; TOTP required; Premium only
+  -> viewer, customer_admin or wobble_admin; TOTP required; Premium only
   -> Filter nhs_claims users with consented=true and withdrawn_at null
   -> Audit portal.participants_viewed
   -> Return names, hashed display id, minutes, sessions, last session, assessment change
@@ -165,7 +165,7 @@ Evidence: `supabase/migrations/20260910132151_portal_tables.sql`, `supabase/migr
 
 **Patients (legacy `/activate`):** email, password, then `nhs-activate` with access token (`app/activate/ActivateClient.tsx`, `app/api/nhs/activate/route.ts`).
 
-**Service / clinician portal users:** passwordless magic link to `/auth/callback` (`lib/portal/magicLink.ts`, `app/api/portal/login/route.ts`). Administrators then complete TOTP (`aal2`) before named lists or the Wobble desk (`lib/portal/mfa.ts`, `app/portal/mfa`). Viewers stay on magic link only. Phase 0 notes leaked-password protection disabled.
+**Service / clinician portal users:** passwordless email link to a confirm page (`/auth/confirm`). Opening the page does not sign in; pressing Sign in does, so mail scanners cannot use the link (`lib/portal/magicLink.ts`, `app/api/auth/confirm/route.ts`). Everyday sign-in links last one hour. A first invitation for new staff lasts 24 hours, single use, token hash only (`lib/portal/staffInvite.ts`, table `portal_staff_invitations`). Every staff member, viewers included, then completes TOTP (`aal2`) (`lib/portal/mfa.ts`, `app/portal/mfa`). Phase 0 notes leaked-password protection disabled.
 
 **Legacy token dashboards:** whoever has the URL token. No portal login (`app/api/dashboard/route.ts`). Those pages show aggregates, not the named Participants tab.
 
@@ -183,7 +183,7 @@ Evidence: `supabase/migrations/20260910132151_portal_tables.sql`, `supabase/migr
 **Partial:**
 
 - All portal data access uses `SUPABASE_SERVICE_ROLE_KEY` (`lib/supabaseServer.ts`), which bypasses RLS. Isolation is only as good as `requireProgrammeAccess`. RLS is enabled on portal tables with **no policies**; `anon`/`authenticated` grants are revoked (`supabase/migrations/20260910132151_portal_tables.sql`). Comment: intentional until policies are added. Still true in code.
-- Viewers are Overview-only. Participants, Licences, and Account APIs return 403 `forbidden_role`; those nav items are hidden (`lib/portal/roles.ts`, `app/api/portal/participants/route.ts`, `app/api/portal/licences/route.ts`, `app/api/portal/account/route.ts`, `app/portal/PortalShell.tsx`). `loadPortalContext` also redirects viewers away from those pages.
+- Viewers see Overview and, on Premium programmes, the named Participants list (agreed 3 October 2026). They cannot issue licences or manage staff: Licences and Account APIs return 403 `forbidden_role` and those nav items are hidden (`lib/portal/roles.ts`, `app/api/portal/licences/route.ts`, `app/api/portal/account/route.ts`, `app/portal/PortalShell.tsx`). `loadPortalContext` redirects viewers away from those pages.
 - Wobble administrators can list every organisation (`lib/portal/wobbleAdmin.ts` `listWobbleOrganisations`). Opening another org's portal still needs membership in that org (`app/portal/WobbleAdminForm.tsx` `memberOrgIds`).
 - `get_campaign_stats` (and siblings) are `SECURITY DEFINER`. `EXECUTE` is revoked from `anon` / `authenticated` and granted to `service_role` on practice and on live Wobble-App (`supabase/migrations/20260920140000_restrict_stats_function_grants.sql`). Token dashboards still work because they already call the functions via the server key.
 
@@ -366,7 +366,7 @@ Ratings are a technical draft for the DPO, not a residual risk sign-off.
 | ID | Risk | Likelihood | Severity | Notes |
 | --- | --- | --- | --- | --- |
 | R1 | Staff in org A see org B's named patients | Low if membership SQL is correct; higher because service_role bypasses RLS | High | Mitigated in app by `requireProgrammeAccess`. No RLS policies |
-| R2 | Viewer or wide staff role sees named health data | Low after role gate | High | Viewers redirected from Participants / Licences / Account; APIs return 403 |
+| R2 | Wide staff role sees named health data | Medium (viewers can see names on Premium) | High | Named list only on Premium and only for consented people; TOTP for every staff member; `portal.participants_viewed` audit; organisation chooses who is added |
 | R3 | Named data shown after withdrawal | Low if the API and app toggle stay wired | High | Filter honours `withdrawn_at`. Residual: app toggle not in this repo; no staff hide control |
 | R4 | Named data for people who never consented (legacy `/activate`) | Low in UI (filter). Medium if someone queries leftover claim names | High | UI hides them; invite decline now omits claim names. Legacy `/activate` still has no consent |
 | R5 | Token dashboard or `get_campaign_stats` leak | Medium (token URL); lower for direct RPC | Medium | Aggregates; suppress under 5 on Overview. `EXECUTE` is `service_role` only on practice and live |
@@ -396,7 +396,7 @@ Ratings are a technical draft for the DPO, not a residual risk sign-off.
 | R9 | Claim and invite expiry windows | Contract/account deletion GAP |
 | R10 | No "at risk" label or sort-by-decline | Colour-coded worsening remains |
 | R11 | `portal.participants_viewed` on named list API and page | Overview views still unlogged |
-| R12 | Magic link plus TOTP for administrators; membership | Viewers still magic-link only |
+| R12 | Email link plus TOTP for every staff member; membership | Lost-app reset depends on Wobble desk checks |
 
 ---
 
@@ -409,7 +409,7 @@ Ratings are a technical draft for the DPO, not a residual risk sign-off.
 - [ ] Replace draft named-reporting wording; record a controlled consent version
 - [ ] App Settings toggle (other repo) calling `GET`/`POST /api/app/reporting-consent`. Website wiring is in place. After lock, email `enquiries@wobblebalance.com`.
 - [x] Omit `nhs_claims` names when the patient says no; name boxes optional on decline
-- [x] Restrict named Participants, Licences, and Account to `customer_admin` / `wobble_admin` (viewers are Overview-only)
+- [x] Restrict Licences and Account to `customer_admin` / `wobble_admin`. Viewers can see named Participants on Premium only
 - [x] Audit log for named Participants views (`portal.participants_viewed`). Overview views still unlogged.
 - [ ] RLS policies or an equivalent database-enforced tenant check
 - [x] Restrict `EXECUTE` on `get_campaign_stats` / `get_org_stats` / `get_stats_for_campaigns` to `service_role` (practice and live Wobble-App applied 20 September 2026)
@@ -418,7 +418,7 @@ Ratings are a technical draft for the DPO, not a residual risk sign-off.
 - [ ] Encryption at rest confirmation from Supabase/Vercel
 - [ ] Mobile app data inventory (DOB, conditions, device, crash, push)
 - [ ] `nhs-activate` Edge Function source review (legacy activate)
-- [x] MFA (TOTP) for staff who can see Premium named data. Viewers exempt. Lost-app reset on the Wobble desk.
+- [x] MFA (TOTP) for every portal staff member, viewers included. Lost-app reset on the Wobble desk.
 - [ ] SAR / export process
 - [ ] Clinical safety review of improvement/decline colouring (is this still "display only"?)
 - [ ] Volume and DPIA screening numbers from live ops, not Git

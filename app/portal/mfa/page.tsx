@@ -36,8 +36,9 @@ export default async function PortalMfaPage({
               Authenticator check
             </h1>
             <p className="mt-2 max-w-prose text-sm text-[#25303B]/80 sm:text-base">
-              Administrators who can see named lists need a second step after
-              the email link. Viewers who only see group totals skip this.
+              Everyone who uses the customer portal needs a second step after
+              the email link. You set it up once, then enter a code each time
+              you sign in.
             </p>
           </div>
           <div className="inline-flex rounded-2xl bg-white/30 p-2 ring-1 ring-black/10">

@@ -1,15 +1,30 @@
 import { NextResponse } from "next/server";
 import { destinationAfterSignIn } from "@/lib/portal/finishSignIn";
-import { portalOtpType } from "@/lib/portal/magicLink";
+import { generateSignInTokenHash, portalOtpType } from "@/lib/portal/magicLink";
 import { PORTAL_LOGIN_PATH, safePortalPath } from "@/lib/portal/paths";
+import { redeemStaffInvite } from "@/lib/portal/staffInvite";
 import { createPortalRouteClient, requestOrigin } from "@/lib/supabase/route";
 
 export async function POST(request: Request) {
   const origin = requestOrigin(request);
   const form = await request.formData();
-  const tokenHash = String(form.get("token_hash") ?? "").trim();
+  const invite = String(form.get("invite") ?? "").trim();
   const next = safePortalPath(String(form.get("next") ?? ""));
-  const type = portalOtpType(String(form.get("type") ?? ""));
+  let tokenHash = String(form.get("token_hash") ?? "").trim();
+  let type = portalOtpType(String(form.get("type") ?? ""));
+
+  if (invite) {
+    const redeemed = await redeemStaffInvite(invite);
+    if (!redeemed) {
+      return NextResponse.redirect(`${origin}${PORTAL_LOGIN_PATH}?error=invite_expired`, 303);
+    }
+    try {
+      tokenHash = await generateSignInTokenHash(origin, redeemed.email);
+      type = "magiclink";
+    } catch {
+      return NextResponse.redirect(`${origin}${PORTAL_LOGIN_PATH}?error=invite_expired`, 303);
+    }
+  }
 
   if (!tokenHash) {
     return NextResponse.redirect(`${origin}${PORTAL_LOGIN_PATH}?error=missing_code`, 303);

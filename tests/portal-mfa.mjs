@@ -4,10 +4,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 function sessionNeedsMfa(memberships) {
-  return memberships.some(
-    (membership) =>
-      membership.role === "customer_admin" || membership.role === "wobble_admin"
-  );
+  return memberships.length > 0;
 }
 
 function parseAal(value) {
@@ -25,9 +22,12 @@ test("MFA helpers live in mfa.ts", () => {
   assert.ok(source.includes("resetMfaForEmail"));
 });
 
-test("viewers skip authenticator checks", () => {
-  assert.equal(sessionNeedsMfa([{ role: "viewer" }]), false);
-  assert.equal(mfaSatisfied({ needsMfa: false, aal: "aal1" }), true);
+test("every portal member needs the authenticator, viewers included", () => {
+  const source = readFileSync(path.join(process.cwd(), "lib/portal/mfa.ts"), "utf8");
+  assert.ok(source.includes("return memberships.length > 0;"));
+  assert.equal(sessionNeedsMfa([{ role: "viewer" }]), true);
+  assert.equal(sessionNeedsMfa([]), false);
+  assert.equal(mfaSatisfied({ needsMfa: true, aal: "aal1" }), false);
 });
 
 test("administrators need aal2 before named tools", () => {

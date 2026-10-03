@@ -133,8 +133,8 @@ export default function PortalMfaForm({ next }: { next: string }) {
 
       {mode === "challenge" && (
         <p className="text-sm text-[#25303B]/80">
-          Enter the 6-digit code from your authenticator app to open named
-          lists and admin tools.
+          Enter the 6-digit code from your authenticator app to open the
+          customer portal.
         </p>
       )}
 

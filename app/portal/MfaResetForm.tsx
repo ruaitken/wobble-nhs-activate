@@ -48,7 +48,7 @@ export default function MfaResetForm() {
     <form onSubmit={handleSubmit} className="mt-8 space-y-4 border-t border-black/10 pt-6">
       <h2 className="text-lg font-extrabold">Reset authenticator</h2>
       <p className="text-sm text-[#25303B]/80">
-        Use this if an administrator loses their authenticator app. They sign
+        Use this if someone loses their authenticator app. They sign
         in with the email link again and set up a new one.
       </p>
       {error && (
