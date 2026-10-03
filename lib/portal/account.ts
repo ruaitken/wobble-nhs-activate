@@ -1,9 +1,9 @@
 import { getSupabaseServer } from "@/lib/supabaseServer";
 import { canRemoveMember } from "@/lib/portal/adminGuards";
-import { canSendPortalEmail, sendPortalMagicLink } from "@/lib/portal/magicLink";
+import { canSendPortalEmail } from "@/lib/portal/magicLink";
+import { sendStaffInvite } from "@/lib/portal/staffInvite";
 import { emailsMatch, normalizeEmail } from "@/lib/portal/licenceMath";
 import type { PortalRole } from "@/lib/portal/membership";
-import { PORTAL_HOME_PATH } from "@/lib/portal/paths";
 
 export class AccountError extends Error {
   constructor(
@@ -132,10 +132,12 @@ export async function inviteAccountMember({
   let emailSent = false;
   if (canSendPortalEmail()) {
     try {
-      await sendPortalMagicLink({
+      await sendStaffInvite({
         request,
+        orgId,
+        userId,
         email: invitedEmail,
-        next: PORTAL_HOME_PATH,
+        createdBy: invitedBy,
       });
       emailSent = true;
     } catch {

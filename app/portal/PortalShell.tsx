@@ -6,7 +6,11 @@ import PortalMainHeader from "@/app/portal/PortalMainHeader";
 import PortalTabs from "@/app/portal/PortalTabs";
 import Link from "next/link";
 import { PORTAL_ADMIN_PATH, programmePath } from "@/lib/portal/paths";
-import { canViewOrgOperations, hasWobbleAdminAccess } from "@/lib/portal/roles";
+import {
+  canViewNamedParticipants,
+  canViewOrgOperations,
+  hasWobbleAdminAccess,
+} from "@/lib/portal/roles";
 import { mfaPagePath, mfaSatisfied } from "@/lib/portal/mfa";
 
 export default function PortalShell({
@@ -18,10 +22,11 @@ export default function PortalShell({
 }) {
   const { session, membership, programmes, selected } = context;
   const canOperate = canViewOrgOperations(membership.role);
-  const needsAuthenticator = canOperate && !mfaSatisfied(session);
+  const canSeeNames = canViewNamedParticipants(membership.role);
+  const needsAuthenticator = !mfaSatisfied(session);
   const tabs = [
     { id: "overview" as const, label: "Overview" },
-    ...(canOperate && selected.show_participants
+    ...(canSeeNames && selected.show_participants
       ? [{ id: "participants" as const, label: "Participants" }]
       : []),
     ...(canOperate ? [{ id: "licences" as const, label: "Licences" }] : []),
@@ -88,7 +93,7 @@ export default function PortalShell({
             <PortalMainHeader selected={selected} />
             {needsAuthenticator ? (
               <div className="mb-6 rounded-xl border border-[#E58B66]/40 bg-[#E58B66]/10 p-4 text-sm">
-                Named lists and admin tools need an authenticator app.{" "}
+                The customer portal needs an authenticator app.{" "}
                 <Link
                   href={mfaPagePath(programmePath(membership.org_id, selected.campaign_id))}
                   className="font-semibold underline"

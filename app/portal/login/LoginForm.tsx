@@ -7,6 +7,8 @@ import { safePortalPath } from "@/lib/portal/paths";
 const ERROR_MESSAGES: Record<string, string> = {
   missing_code:
     "That sign-in link did not open properly. Enter your email below to get a new one.",
+  invite_expired:
+    "That invitation has expired or has already been used. If you have been added to the portal, enter your email below to get a sign-in link.",
   invalid_link:
     "That sign-in link has expired or has already been used. Links last one hour. Enter your email below to get a new one.",
 };

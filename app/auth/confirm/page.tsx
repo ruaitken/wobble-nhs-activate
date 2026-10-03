@@ -9,10 +9,11 @@ import { PORTAL_LOGIN_PATH, safePortalPath } from "@/lib/portal/paths";
 export default async function ConfirmSignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token_hash?: string; type?: string; next?: string }>;
+  searchParams: Promise<{ token_hash?: string; type?: string; next?: string; invite?: string }>;
 }) {
   const params = await searchParams;
   const tokenHash = params.token_hash?.trim() ?? "";
+  const invite = params.invite?.trim() ?? "";
   const next = safePortalPath(params.next);
   const type = portalOtpType(params.type);
 
@@ -45,9 +46,13 @@ export default async function ConfirmSignInPage({
           </div>
         </header>
         <section className="rounded-2xl bg-[#F9F5EF] p-6 shadow-xl ring-1 ring-black/5 sm:p-8">
-          {tokenHash ? (
+          {tokenHash || invite ? (
             <form method="post" action="/api/auth/confirm" className="space-y-5">
-              <input type="hidden" name="token_hash" value={tokenHash} />
+              {invite ? (
+                <input type="hidden" name="invite" value={invite} />
+              ) : (
+                <input type="hidden" name="token_hash" value={tokenHash} />
+              )}
               <input type="hidden" name="type" value={type} />
               <input type="hidden" name="next" value={next} />
               <button

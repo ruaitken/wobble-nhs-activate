@@ -5,7 +5,7 @@ export function canViewOrgOperations(role: PortalRole | undefined) {
 }
 
 export function canViewNamedParticipants(role: PortalRole | undefined) {
-  return canViewOrgOperations(role);
+  return role === "viewer" || canViewOrgOperations(role);
 }
 
 export function canManageLicences(role: PortalRole | undefined) {

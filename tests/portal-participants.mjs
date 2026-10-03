@@ -95,7 +95,17 @@ test("the example participant dashboard has 35 named people, four pages", () => 
   assert.ok(source.includes("slicePage"));
 });
 
-test("viewers cannot load named participants from the API or nav", () => {
+test("viewers can see named participants but cannot manage licences or people", async () => {
+  const roles = await import("../lib/portal/roles.ts");
+  assert.equal(roles.canViewNamedParticipants("viewer"), true);
+  assert.equal(roles.canViewNamedParticipants("customer_admin"), true);
+  assert.equal(roles.canViewNamedParticipants(undefined), false);
+  assert.equal(roles.canManageLicences("viewer"), false);
+  assert.equal(roles.canManageUsers("viewer"), false);
+  assert.equal(roles.canViewOrgOperations("viewer"), false);
+});
+
+test("the named list checks role, authenticator and audit", () => {
   const roles = readFileSync(path.join(process.cwd(), "lib/portal/roles.ts"), "utf8");
   const route = readFileSync(
     path.join(process.cwd(), "app/api/portal/participants/route.ts"),
@@ -120,7 +130,9 @@ test("viewers cannot load named participants from the API or nav", () => {
   assert.ok(participants.includes('action: "portal.participants_viewed"'));
   assert.ok(participants.includes("actor_user_id"));
   assert.ok(participants.includes("campaign_id"));
-  assert.ok(shell.includes("canViewOrgOperations"));
+  assert.ok(route.includes("requireSatisfiedMfa"));
+  assert.ok(shell.includes("canViewNamedParticipants"));
+  assert.ok(context.includes("canViewNamedParticipants"));
   assert.ok(context.includes("canViewOrgOperations"));
 });
 

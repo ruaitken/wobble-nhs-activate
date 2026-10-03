@@ -87,13 +87,13 @@ test("base programmes do not expose participants", () => {
   assert.equal(falls.show_participants, true);
 });
 
-test("viewers only see Overview in the portal shell", () => {
+test("viewers see Participants on Premium but not Licences or Account", () => {
   const shell = readFileSync(
     path.join(process.cwd(), "app/portal/PortalShell.tsx"),
     "utf8"
   );
-  assert.ok(shell.includes("canViewOrgOperations"));
-  assert.ok(shell.includes("canOperate && selected.show_participants"));
+  assert.ok(shell.includes("canSeeNames && selected.show_participants"));
+  assert.ok(shell.includes('canOperate ? [{ id: "licences"'));
   assert.ok(shell.includes("canOperate ? ("));
 });
 
