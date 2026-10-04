@@ -114,14 +114,18 @@ function ParticipantTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[960px] border-collapse text-left">
+        <table className="w-full min-w-[960px] table-fixed border-collapse text-center">
+          <colgroup>
+            <col className="w-[22%]" />
+            <col className="w-[13%]" span={6} />
+          </colgroup>
           <thead>
             <tr className="bg-[#25303B]/5 text-xs font-bold uppercase tracking-wide text-[#25303B]/60">
-              <th className="px-5 py-3">Participant</th>
-              <th className="px-4 py-3">This week</th>
+              <th className="px-5 py-3 text-left">Participant</th>
+              <th className="px-4 py-3">Sessions / week</th>
               <th className="px-4 py-3">Total</th>
               <th className="px-4 py-3">Weekly average</th>
-              <th className="px-4 py-3">Sessions / week</th>
+              <th className="px-4 py-3">This week</th>
               <th className="px-4 py-3">Last session</th>
               <th className="px-4 py-3">Outcomes</th>
             </tr>
@@ -139,23 +143,23 @@ function ParticipantTable({
                   ].join(" ")}
                   onClick={() => onSelect(participant.id)}
                 >
-                  <td className="px-5 py-4">
-                    <span className="block text-sm font-extrabold">
+                  <td className="px-5 py-4 text-left">
+                    <span className="block truncate text-sm font-extrabold">
                       {participant.first_name} {participant.last_name}
                     </span>
-                    <span className="mt-0.5 block text-xs text-[#25303B]/55">
+                    <span className="mt-0.5 block truncate text-xs text-[#25303B]/55">
                       {participant.id}
                     </span>
                   </td>
                   <td className="px-4 py-4 text-sm font-bold">
-                    {participant.minutes_this_week} min
+                    {participant.average_sessions_per_week}
                   </td>
                   <td className="px-4 py-4 text-sm">{participant.total_minutes} min</td>
                   <td className="px-4 py-4 text-sm">
                     {participant.average_weekly_minutes} min
                   </td>
                   <td className="px-4 py-4 text-sm">
-                    {participant.average_sessions_per_week}
+                    {participant.minutes_this_week} min
                   </td>
                   <td className="px-4 py-4 text-sm">
                     {formatSessionDate(participant.last_session)}

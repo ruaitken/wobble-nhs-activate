@@ -120,6 +120,8 @@ export async function getPortalParticipants(
       };
     })
     .sort((a, b) => {
+      const sessions = b.average_sessions_per_week - a.average_sessions_per_week;
+      if (sessions !== 0) return sessions;
       const last = a.last_name.localeCompare(b.last_name);
       return last !== 0 ? last : a.first_name.localeCompare(b.first_name);
     });
