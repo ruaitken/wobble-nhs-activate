@@ -28,7 +28,7 @@ Evidence is file-backed. Unknowns are GAP. This is a technical audit, not legal 
 | Item | Status | Evidence |
 | --- | --- | --- |
 | Invitation tokens hashed at rest | **Present** | `lib/portal/inviteToken.ts`; comment in `supabase/migrations/20260910132151_portal_tables.sql` |
-| Small-number suppression on Overview | **Present** | `app/portal/PortalOverview.tsx` `suppressed` / enrolled count |
+| Small-number suppression on Overview | **Present** | Portal Overview shows anonymised figures from 3 members (`app/portal/PortalOverview.tsx`, `get_portal_campaign_stats`). Token dashboards stay at 5. |
 | MFA for Premium staff | **Partial** | TOTP after the email link for every staff member, viewers included. Wobble desk can reset a lost app (`app/portal/mfa`, `app/api/portal/admin/mfa-reset`). Live staff must enroll after deploy. |
 | Stats RPCs not callable with the public key | **Present** | `EXECUTE` on `get_campaign_stats`, `get_org_stats`, `get_stats_for_campaigns` is `service_role` only on practice and live Wobble-App (`supabase/migrations/20260920140000_restrict_stats_function_grants.sql`). Token dashboards still use the server key. |
 | Patient app and Edge Function in this evidence set | **GAP** | Not in this repository; `nhs-activate` invoked only (`app/api/nhs/activate/route.ts`) |

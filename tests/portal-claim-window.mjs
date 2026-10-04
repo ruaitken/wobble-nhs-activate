@@ -139,6 +139,20 @@ test("Overview uses the capped function; token dashboards keep the old one", () 
   assert.ok(migration.includes("to service_role"));
 });
 
+test("portal Overview shows anonymised figures from 3 members", () => {
+  const migration = readFileSync(
+    path.join(process.cwd(), "supabase/migrations/20261004180000_portal_overview_minimum_three.sql"),
+    "utf8"
+  );
+  assert.ok(migration.includes("(select enrolled from kpi) < 3"));
+  assert.ok(migration.includes("(select paired_members from outcomes) < 3"));
+  assert.ok(migration.includes("< 50 then 'Under 50'"));
+  assert.ok(!migration.includes(") < 5"));
+  assert.ok(!/function public\.get_campaign_stats/.test(migration));
+  assert.ok(readFileSync(path.join(process.cwd(), "app/portal/PortalDashboard.tsx"), "utf8").includes("minimumToShow={3}"));
+  assert.ok(readFileSync(path.join(process.cwd(), "app/portal/PortalOverview.tsx"), "utf8").includes("least 3 members"));
+});
+
 test("re-activating an ended place on the same programme is refused", () => {
   const source = readFileSync(path.join(process.cwd(), "lib/portal/licences.ts"), "utf8");
   const client = readFileSync(path.join(process.cwd(), "app/invite/InviteActivateClient.tsx"), "utf8");

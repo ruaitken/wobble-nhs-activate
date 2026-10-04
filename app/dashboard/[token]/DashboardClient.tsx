@@ -71,11 +71,11 @@ export function formatNumber(n: number) {
 }
 
 // A demographic breakdown is "ready" once there's meaningful known (non-Unknown) data.
-function hasKnownData(slices: Slice[]) {
+function hasKnownData(slices: Slice[], minimumToShow: number) {
   const known = slices
     .filter((s) => s.label.toLowerCase() !== "unknown")
     .reduce((sum, s) => sum + s.n, 0);
-  return known >= 5;
+  return known >= minimumToShow;
 }
 
 export default function DashboardClient({
@@ -195,8 +195,10 @@ export default function DashboardClient({
 
 export function Dashboard({
   stats,
+  minimumToShow = 5,
 }: {
   stats: Extract<Stats, { found: true; suppressed: false }>;
+  minimumToShow?: number;
 }) {
   return (
     <div className="space-y-6">
@@ -246,7 +248,7 @@ export function Dashboard({
       </Section>
 
       {/* Outcomes */}
-      <OutcomesSection outcomes={stats.outcomes} />
+      <OutcomesSection outcomes={stats.outcomes} minimumToShow={minimumToShow} />
 
       {/* Who's taking part */}
       <div>
@@ -254,8 +256,8 @@ export function Dashboard({
           🧑‍🤝‍🧑 Who&apos;s taking part
         </h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          <DemographicCard title="Age of members" slices={stats.age} />
-          <DemographicCard title="Sex of members" slices={stats.sex} />
+          <DemographicCard title="Age of members" slices={stats.age} minimumToShow={minimumToShow} />
+          <DemographicCard title="Sex of members" slices={stats.sex} minimumToShow={minimumToShow} />
         </div>
       </div>
     </div>
@@ -305,7 +307,13 @@ function Kpi({
   );
 }
 
-function OutcomesSection({ outcomes }: { outcomes: Outcomes }) {
+function OutcomesSection({
+  outcomes,
+  minimumToShow,
+}: {
+  outcomes: Outcomes;
+  minimumToShow: number;
+}) {
   return (
     <section>
       <h2 className="mb-3 text-sm font-extrabold uppercase tracking-wide text-[#25303B]/70">
@@ -315,7 +323,7 @@ function OutcomesSection({ outcomes }: { outcomes: Outcomes }) {
         <div className="flex min-h-[120px] flex-col items-center justify-center rounded-2xl border border-dashed border-black/15 bg-[#F9F5EF]/70 p-6 text-center shadow-sm ring-1 ring-black/5">
           <div className="text-sm font-semibold">We’re collecting this data</div>
           <div className="mt-1 max-w-prose text-xs text-[#25303B]/70">
-            Outcome improvements appear once at least 5 members have completed a
+            Outcome improvements appear once at least {minimumToShow} members have completed a
             retake assessment. ({outcomes.paired_members} so far.)
           </div>
         </div>
@@ -395,8 +403,16 @@ function FallsCard({ metric }: { metric?: FallsMetric }) {
   );
 }
 
-function DemographicCard({ title, slices }: { title: string; slices: Slice[] }) {
-  const ready = hasKnownData(slices);
+function DemographicCard({
+  title,
+  slices,
+  minimumToShow,
+}: {
+  title: string;
+  slices: Slice[];
+  minimumToShow: number;
+}) {
+  const ready = hasKnownData(slices, minimumToShow);
 
   return (
     <div className="rounded-2xl bg-[#F9F5EF] p-6 shadow-xl ring-1 ring-black/5">

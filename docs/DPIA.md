@@ -242,7 +242,7 @@ It does **not** return email, raw UUID, date of birth, or `workout_log` rows.
 
 - Names are omitted from `nhs_claims` if the patient said no (`claimNameFields` in `lib/portal/inviteProfile.ts`). Name boxes are optional on decline.
 - Staff Licences tab sees invited emails (`lib/portal/licences.ts` snapshot).
-- Overview still shows cohort age/gender slices from `get_campaign_stats` (aggregated, with a suppress-under-5 members rule in `app/portal/PortalOverview.tsx`).
+- Overview still shows cohort age/gender slices from `get_portal_campaign_stats` (aggregated). Portal Overview shows anonymised figures from 3 members (`app/portal/PortalOverview.tsx`). Token dashboards still suppress under 5.
 
 ### 1.13 Third parties / subprocessors (patient-related)
 
@@ -369,7 +369,7 @@ Ratings are a technical draft for the DPO, not a residual risk sign-off.
 | R2 | Wide staff role sees named health data | Medium (viewers can see names on Premium) | High | Named list only on Premium and only for consented people; TOTP for every staff member; `portal.participants_viewed` audit; organisation chooses who is added |
 | R3 | Named data shown after withdrawal | Low if the API and app toggle stay wired | High | Filter honours `withdrawn_at`. Residual: app toggle not in this repo; no staff hide control |
 | R4 | Named data for people who never consented (legacy `/activate`) | Low in UI (filter). Medium if someone queries leftover claim names | High | UI hides them; invite decline now omits claim names. Legacy `/activate` still has no consent |
-| R5 | Token dashboard or `get_campaign_stats` leak | Medium (token URL); lower for direct RPC | Medium | Aggregates; suppress under 5 on Overview. `EXECUTE` is `service_role` only on practice and live |
+| R5 | Token dashboard or `get_campaign_stats` leak | Medium (token URL); lower for direct RPC | Medium | Aggregates. Portal Overview shows from 3 members; token dashboards suppress under 5. `EXECUTE` is `service_role` only on practice and live |
 | R6 | Over-collection (emails to staff) | Medium | Medium | See minimisation |
 | R7 | Invite email / magic link goes to wrong mailbox or is forwarded | Medium | High | Email is the identifier |
 | R8 | RevenueCat or Resend transfer outside UK | Medium | Medium | UUID versus email; no scores to RevenueCat |
@@ -389,7 +389,7 @@ Ratings are a technical draft for the DPO, not a residual risk sign-off.
 | R2 | Named Participants, Licences, and Account require customer_admin or wobble_admin on API, page, and nav | Residual: service_role still bypasses RLS |
 | R3 | `withdrawn_at` filter; patient consent API; claim names cleared on withdraw | App toggle not verified from this repo; no staff hide UI. Partial |
 | R4 | Visibility filter; Overview privacy copy; claim names omitted on decline | Legacy activate has no consent |
-| R5 | Forbidden-key check; n<5 suppress on Overview; `EXECUTE` limited to `service_role` on practice and live | Token dashboards still work with a URL. Partial |
+| R5 | Forbidden-key check; portal Overview shows from 3 members; `EXECUTE` limited to `service_role` on practice and live | Token dashboards still suppress under 5 and work with a URL. Partial |
 | R6 | Participants payload stripped of email/uuid; claim names omitted on decline | Licences emails. Partial |
 | R7 | Email locked to invite; token hashed at rest | Raw token in email. Partial |
 | R8 | RevenueCat gets id + dates only | Transfer docs GAP |

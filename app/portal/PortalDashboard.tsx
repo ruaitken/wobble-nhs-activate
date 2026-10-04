@@ -7,5 +7,5 @@ export default function PortalDashboard({
 }: {
   stats: Extract<Stats, { found: true; suppressed: false }>;
 }) {
-  return <Dashboard stats={stats} />;
+  return <Dashboard stats={stats} minimumToShow={3} />;
 }

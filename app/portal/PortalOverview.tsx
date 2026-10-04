@@ -28,7 +28,7 @@ export default function PortalOverview({
         <div className="text-sm font-extrabold">Not enough members yet</div>
         <div className="mt-1 text-sm text-[#25303B]/80">
           To protect individual privacy, we only show cohort statistics once at
-          least 5 members have enrolled. Currently enrolled: {stats.enrolled}.
+          least 3 members have enrolled. Currently enrolled: {stats.enrolled}.
         </div>
       </div>
     );
