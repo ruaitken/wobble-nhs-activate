@@ -211,7 +211,7 @@ export function Dashboard({
           {formatNumber(stats.total_minutes)} minutes
         </div>
         <p className="mt-3 max-w-prose text-pretty text-sm text-[#F9F5EF]/85">
-          {stats.trust_name ?? "This programme"} has delivered{" "}
+          {stats.service_name ?? "This programme"} has delivered{" "}
           {formatNumber(stats.total_minutes)} minutes of strength &amp; balance
           exercise through Wobble — helping members build better balance, strength
           and confidence, one session at a time.

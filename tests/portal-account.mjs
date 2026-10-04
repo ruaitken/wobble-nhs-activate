@@ -98,4 +98,5 @@ test("account invitations require matching emails", () => {
   assert.ok(source.includes("emailsMatch"));
   assert.ok(source.includes("emails_do_not_match"));
   assert.ok(ui.includes("Confirm email address"));
+  assert.ok(ui.includes("The invitation lasts 24"));
 });

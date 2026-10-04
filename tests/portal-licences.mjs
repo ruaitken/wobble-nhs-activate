@@ -128,6 +128,12 @@ test("invitation lists page 10 at a time after searching everyone", () => {
   );
   assert.ok(source.includes("slicePage"));
   assert.ok(source.includes("Search email"));
+  assert.ok(source.includes("HowItWorks"));
+  assert.ok(
+    readFileSync(path.join(process.cwd(), "app/portal/HowItWorks.tsx"), "utf8").includes(
+      "Choose the programme first"
+    )
+  );
 
   const invitations = Array.from({ length: 35 }, (_, index) => `user${index + 1}@example.com`);
   const filtered = invitations.filter((email) =>

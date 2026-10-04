@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { LicenceSnapshot } from "@/lib/portal/licenceMath";
 import { matchesSearch, slicePage } from "@/lib/portal/listPaging";
+import HowItWorks from "@/app/portal/HowItWorks";
 import ListPager from "@/app/portal/ListPager";
 
 const ERRORS: Record<string, string> = {
@@ -106,13 +107,13 @@ export default function LicenceManager({
 
   return (
     <div className="space-y-6 rounded-2xl bg-[#F9F5EF] p-6 shadow-xl ring-1 ring-black/5 sm:p-8">
-      <div>
+      <HowItWorks>
         <h3 className="text-lg font-bold">Licences</h3>
         <p className="mt-2 text-sm text-[#25303B]/80">
           {snapshot.issued} of {snapshot.seat_limit} issued
         </p>
         <p className="text-sm text-[#25303B]/80">{snapshot.remaining} remaining</p>
-      </div>
+      </HowItWorks>
 
       {archived ? (
         <p className="text-sm text-[#25303B]/80">
