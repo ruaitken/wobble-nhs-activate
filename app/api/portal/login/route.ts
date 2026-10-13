@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { findAuthUserByEmail } from "@/lib/portal/findAuthUser";
 import { getSupabaseServer } from "@/lib/supabaseServer";
 import { getPortalMemberships } from "@/lib/portal/membership";
 import { canSendPortalEmail, sendPortalMagicLink } from "@/lib/portal/magicLink";
@@ -23,17 +24,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: "invalid_email" }, { status: 400 });
   }
 
-  const admin = getSupabaseServer();
-  const { data: usersPage, error: listError } = await admin.auth.admin.listUsers({
-    page: 1,
-    perPage: 200,
-  });
-
-  if (listError) {
+  let authUser;
+  try {
+    authUser = await findAuthUserByEmail(email);
+  } catch {
     return NextResponse.json({ ok: true, message: GENERIC_SENT_MESSAGE });
   }
 
-  const authUser = usersPage.users.find((user) => user.email?.toLowerCase() === email);
   if (!authUser) {
     return NextResponse.json({ ok: true, message: GENERIC_SENT_MESSAGE });
   }
@@ -59,6 +56,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, message: GENERIC_SENT_MESSAGE });
   }
 
+  const admin = getSupabaseServer();
   await admin.from("portal_audit_events").insert({
     actor_user_id: authUser.id,
     org_id: memberships[0]?.org_id ?? null,

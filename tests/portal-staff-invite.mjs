@@ -31,6 +31,15 @@ test("an invite can be used once, before it expires, by a current member", () =>
   assert.ok(invite.includes('action: "portal.staff_invite_used"'));
 });
 
+test("staff email lookup continues past the first page of accounts", () => {
+  const lookup = source("lib/portal/findAuthUser.ts");
+  assert.ok(lookup.includes("for (let page = 1; page <= MAX_PAGES; page += 1)"));
+  assert.ok(lookup.includes("perPage: PAGE_SIZE"));
+  assert.ok(source("lib/portal/account.ts").includes("findAuthUserByEmail"));
+  assert.ok(source("app/api/portal/login/route.ts").includes("findAuthUserByEmail"));
+  assert.equal(source("lib/portal/account.ts").includes("perPage: 200"), false);
+});
+
 test("adding staff sends the 24-hour invite; everyday sign-in stays one hour", () => {
   const account = source("lib/portal/account.ts");
   assert.ok(account.includes("sendStaffInvite"));

@@ -1,3 +1,4 @@
+import { findAuthUserByEmail } from "@/lib/portal/findAuthUser";
 import { getSupabaseServer } from "@/lib/supabaseServer";
 
 export const REPORTING_CONSENT_VERSION = "portal-v1";
@@ -31,13 +32,8 @@ export function parseConsentChoice(value: unknown): boolean | null {
 }
 
 async function findUserIdByEmail(email: string) {
-  const admin = getSupabaseServer();
-  const { data, error } = await admin.auth.admin.listUsers({
-    page: 1,
-    perPage: 200,
-  });
-  if (error) throw error;
-  return data.users.find((user) => user.email?.toLowerCase() === email)?.id ?? null;
+  const user = await findAuthUserByEmail(email);
+  return user?.id ?? null;
 }
 
 export async function loadProfileNamesByEmail(email: string) {

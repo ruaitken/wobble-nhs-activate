@@ -1,5 +1,6 @@
 import { getSupabaseServer } from "@/lib/supabaseServer";
 import { canRemoveMember } from "@/lib/portal/adminGuards";
+import { emailsByUserId, findAuthUserByEmail } from "@/lib/portal/findAuthUser";
 import { canSendPortalEmail } from "@/lib/portal/magicLink";
 import { sendStaffInvite } from "@/lib/portal/staffInvite";
 import { emailsMatch, normalizeEmail } from "@/lib/portal/licenceMath";
@@ -28,26 +29,9 @@ function isPortalRole(value: string): value is PortalRole {
   return value === "wobble_admin" || value === "customer_admin" || value === "viewer";
 }
 
-async function usersById() {
-  const admin = getSupabaseServer();
-  const { data, error } = await admin.auth.admin.listUsers({
-    page: 1,
-    perPage: 200,
-  });
-  if (error) throw error;
-  return new Map(
-    (data.users ?? []).map((user) => [user.id, user.email?.toLowerCase() ?? ""])
-  );
-}
-
 async function findUserIdByEmail(email: string) {
-  const admin = getSupabaseServer();
-  const { data, error } = await admin.auth.admin.listUsers({
-    page: 1,
-    perPage: 200,
-  });
-  if (error) throw error;
-  return data.users.find((user) => user.email?.toLowerCase() === email)?.id ?? null;
+  const user = await findAuthUserByEmail(email);
+  return user?.id ?? null;
 }
 
 export async function listAccountMembers(orgId: string): Promise<AccountMember[]> {
@@ -59,7 +43,7 @@ export async function listAccountMembers(orgId: string): Promise<AccountMember[]
     .order("created_at", { ascending: true });
   if (error) throw error;
 
-  const emails = await usersById();
+  const emails = await emailsByUserId((data ?? []).map((row) => row.user_id));
   const rows = (data ?? []).flatMap((row) => {
     if (!isPortalRole(row.role)) return [];
     return [

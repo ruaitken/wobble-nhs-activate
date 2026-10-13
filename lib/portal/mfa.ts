@@ -1,3 +1,4 @@
+import { findAuthUserByEmail } from "@/lib/portal/findAuthUser";
 import { getSupabaseServer } from "@/lib/supabaseServer";
 import { PORTAL_MFA_PATH } from "@/lib/portal/paths";
 import type { PortalMembership } from "@/lib/portal/membership";
@@ -33,13 +34,7 @@ export async function resetMfaForEmail(email: string) {
   }
 
   const admin = getSupabaseServer();
-  const { data, error } = await admin.auth.admin.listUsers({
-    page: 1,
-    perPage: 200,
-  });
-  if (error) throw error;
-
-  const user = data.users.find((item) => item.email?.toLowerCase() === normalized);
+  const user = await findAuthUserByEmail(normalized);
   if (!user) throw new MfaResetError(404, "unknown_user");
 
   const { data: factors, error: listError } = await admin.auth.admin.mfa.listFactors({
