@@ -98,8 +98,7 @@ export default function ProgrammeSwitcher({
               selected={programme.campaign_id === selectedId}
               onChoose={() => choose(programme.campaign_id)}
             >
-              {programme.label}
-              {programme.is_current ? "" : " (historical)"}
+              {`${programme.label}${programme.is_current ? "" : " (historical)"}`}
             </MenuChoice>
           ))}
         </div>
