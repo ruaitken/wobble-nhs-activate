@@ -17,6 +17,18 @@ function hasForbiddenKey(value: unknown): boolean {
   });
 }
 
+export async function getPortalOrgStats(orgId: string) {
+  const admin = getSupabaseServer();
+  const { data, error } = await admin.rpc("get_portal_org_stats", {
+    p_org_id: orgId,
+  });
+  if (error) throw error;
+  if (hasForbiddenKey(data)) {
+    throw new Error("aggregate_contains_personal_data");
+  }
+  return data;
+}
+
 export async function getPortalCampaignStats(campaignId: string) {
   const admin = getSupabaseServer();
   const { data, error } = await admin.rpc("get_portal_campaign_stats", {

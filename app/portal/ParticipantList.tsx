@@ -25,7 +25,7 @@ export default function ParticipantList({
   const filtered = useMemo(() => {
     return snapshot.participants.filter((person) =>
       matchesSearch(
-        `${person.first_name} ${person.last_name} ${person.id}`,
+        `${person.first_name} ${person.last_name} ${person.code ?? person.id} ${person.programme_name ?? ""}`,
         query
       )
     );
@@ -37,7 +37,10 @@ export default function ParticipantList({
   function handleQueryChange(value: string) {
     setQuery(value);
     const firstMatch = snapshot.participants.find((person) =>
-      matchesSearch(`${person.first_name} ${person.last_name} ${person.id}`, value)
+      matchesSearch(
+        `${person.first_name} ${person.last_name} ${person.code ?? person.id} ${person.programme_name ?? ""}`,
+        value
+      )
     );
     if (firstMatch) setSelectedId(firstMatch.id);
   }
@@ -147,8 +150,13 @@ function ParticipantTable({
                     <span className="block truncate text-sm font-extrabold">
                       {participant.first_name} {participant.last_name}
                     </span>
+                    {participant.programme_name ? (
+                      <span className="mt-0.5 block truncate text-xs font-semibold text-[#25303B]/70">
+                        {participant.programme_name}
+                      </span>
+                    ) : null}
                     <span className="mt-0.5 block truncate text-xs text-[#25303B]/55">
-                      {participant.id}
+                      {participant.code ?? participant.id}
                     </span>
                   </td>
                   <td className="px-4 py-4 text-sm font-bold">
@@ -218,7 +226,10 @@ function ParticipantDetail({ participant }: { participant: PortalParticipant }) 
           <h2 className="mt-1 text-2xl font-extrabold">
             {participant.first_name} {participant.last_name}
           </h2>
-          <p className="mt-1 text-xs text-[#F9F5EF]/60">{participant.id}</p>
+          {participant.programme_name ? (
+            <p className="mt-1 text-sm text-[#F9F5EF]/80">{participant.programme_name}</p>
+          ) : null}
+          <p className="mt-1 text-xs text-[#F9F5EF]/60">{participant.code ?? participant.id}</p>
         </div>
         <div className="inline-flex w-fit items-center gap-2 rounded-full bg-[#34D399]/15 px-3 py-1.5 text-xs font-bold text-[#8BE6C1] ring-1 ring-[#34D399]/25">
           <span className="h-2 w-2 rounded-full bg-[#34D399]" />

@@ -1,3 +1,5 @@
+import { OVERALL_PROGRAMME_ID } from "@/lib/portal/paths";
+
 export type ProgrammeTier = "base" | "premium";
 export type SubscriptionStatus = "trial" | "active" | "suspended" | "cancelled";
 
@@ -17,6 +19,7 @@ export type ProgrammeView = ProgrammeRecord & {
   is_current: boolean;
   can_issue_licences: boolean;
   show_participants: boolean;
+  is_overall?: boolean;
 };
 
 function parseTime(value: string | null) {
@@ -49,6 +52,28 @@ export function toProgrammeView(
     is_current: isCurrent,
     can_issue_licences: isCurrent,
     show_participants: programme.dashboard_tier === "premium",
+  };
+}
+
+export function overallProgrammeView(
+  orgId: string,
+  programmes: ProgrammeView[]
+): ProgrammeView {
+  const premium = programmes.some((programme) => programme.dashboard_tier === "premium");
+  return {
+    campaign_id: OVERALL_PROGRAMME_ID,
+    org_id: orgId,
+    service_name: "Overall",
+    starts_at: null,
+    ends_at: null,
+    is_active: true,
+    dashboard_tier: premium ? "premium" : "base",
+    subscription_status: "active",
+    label: "Overall",
+    is_current: true,
+    can_issue_licences: false,
+    show_participants: programmes.some((programme) => programme.show_participants),
+    is_overall: true,
   };
 }
 

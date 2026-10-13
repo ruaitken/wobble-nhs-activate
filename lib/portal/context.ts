@@ -3,12 +3,14 @@ import { getPortalSession } from "@/lib/portal/session";
 import { hasOrgAccess } from "@/lib/portal/membership";
 import { getOrgProgrammes, pickDefaultCampaignId } from "@/lib/portal/programmes";
 import {
+  OVERALL_PROGRAMME_ID,
   PORTAL_ADMIN_PATH,
   PORTAL_HOME_PATH,
   PORTAL_LOGIN_PATH,
   programmePath,
   type PortalTab,
 } from "@/lib/portal/paths";
+import { overallProgrammeView } from "@/lib/portal/programmeStatus";
 import {
   canViewNamedParticipants,
   canViewOrgOperations,
@@ -51,7 +53,10 @@ export async function loadPortalContext(
   if (!hasOrgAccess(session.memberships, orgId)) redirect(PORTAL_HOME_PATH);
 
   const programmes = await getOrgProgrammes(orgId);
-  const selected = programmes.find((programme) => programme.campaign_id === campaignId);
+  const selected =
+    campaignId === OVERALL_PROGRAMME_ID
+      ? overallProgrammeView(orgId, programmes)
+      : programmes.find((programme) => programme.campaign_id === campaignId);
   if (!selected) {
     const fallback = pickDefaultCampaignId(programmes);
     if (fallback) redirect(programmePath(orgId, fallback, tab));
@@ -72,6 +77,10 @@ export async function loadPortalContext(
 
   if (tab !== "overview" && !mfaSatisfied(session)) {
     redirect(mfaPagePath(programmePath(orgId, selected.campaign_id, tab)));
+  }
+
+  if (tab === "licences" && selected.is_overall) {
+    redirect(programmePath(orgId, selected.campaign_id, "overview"));
   }
 
   if (tab === "participants" && !selected.show_participants) {

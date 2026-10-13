@@ -29,7 +29,9 @@ export default function PortalShell({
     ...(canSeeNames && selected.show_participants
       ? [{ id: "participants" as const, label: "Participants" }]
       : []),
-    ...(canOperate ? [{ id: "licences" as const, label: "Licences" }] : []),
+    ...(canOperate && !selected.is_overall
+      ? [{ id: "licences" as const, label: "Licences" }]
+      : []),
   ];
 
   return (

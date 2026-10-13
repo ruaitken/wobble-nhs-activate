@@ -30,8 +30,8 @@ export type Stats =
       trust_name: string | null;
       service_name: string | null;
       enrolled: number;
-      seat_limit: number;
-      seats_remaining: number;
+      seat_limit?: number;
+      seats_remaining?: number;
       active_users: number;
       engagement_rate_pct: number;
       active_last_7d: number;
@@ -243,7 +243,9 @@ export function Dashboard({
       {/* Cohort engagement & usage */}
       <Section title="📈 Cohort engagement & usage">
         <Kpi label="Members enrolled" value={formatNumber(stats.enrolled)} />
-        <Kpi label="Seats remaining" value={formatNumber(stats.seats_remaining)} />
+        {typeof stats.seats_remaining === "number" ? (
+          <Kpi label="Seats remaining" value={formatNumber(stats.seats_remaining)} />
+        ) : null}
         <Kpi label="Engagement rate" value={`${stats.engagement_rate_pct}%`} />
       </Section>
 

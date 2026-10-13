@@ -5,7 +5,7 @@ import { useState } from "react";
 const STEPS = [
   {
     title: "Choose the programme first",
-    body: "Use the Programme menu on the left. A licence only applies to the programme selected there. A programme marked historical cannot be used.",
+    body: "Use the Programme menu on the left. Overall adds every programme into one picture. A licence only applies to the programme selected there, so Licences is hidden on Overall. A programme marked historical cannot be used.",
   },
   {
     title: "Send the licence",

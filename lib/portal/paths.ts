@@ -1,4 +1,5 @@
 export const PORTAL_HOME_PATH = "/portal";
+export const OVERALL_PROGRAMME_ID = "overall";
 export const PORTAL_LOGIN_PATH = "/portal/login";
 export const PORTAL_ADMIN_PATH = "/portal/admin";
 export const PORTAL_MFA_PATH = "/portal/mfa";

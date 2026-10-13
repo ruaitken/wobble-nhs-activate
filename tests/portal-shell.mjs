@@ -93,7 +93,8 @@ test("viewers see Participants on Premium but not Licences or Account", () => {
     "utf8"
   );
   assert.ok(shell.includes("canSeeNames && selected.show_participants"));
-  assert.ok(shell.includes('canOperate ? [{ id: "licences"'));
+  assert.ok(shell.includes('id: "licences"'));
+  assert.ok(shell.includes("!selected.is_overall"));
   assert.ok(shell.includes("canOperate ? ("));
 });
 

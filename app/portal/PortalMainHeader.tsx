@@ -12,9 +12,11 @@ export default function PortalMainHeader({ selected }: { selected: ProgrammeView
   const title = isAccount ? "Account" : selected.label;
   const subtitle = isAccount
     ? "People who can sign in to this organisation"
-    : `${selected.dashboard_tier === "premium" ? "Premium" : "Base"}${
-        selected.is_current ? " · current period" : " · historical, read-only"
-      }`;
+    : selected.is_overall
+      ? "Combined picture across every programme"
+      : `${selected.dashboard_tier === "premium" ? "Premium" : "Base"}${
+          selected.is_current ? " · current period" : " · historical, read-only"
+        }`;
 
   return (
     <header className="mb-7 flex items-start justify-between gap-6">

@@ -12,6 +12,8 @@ export type ParticipantAssessment = {
 
 export type PortalParticipant = {
   id: string;
+  code?: string;
+  programme_name?: string;
   first_name: string;
   last_name: string;
   minutes_this_week: number;
