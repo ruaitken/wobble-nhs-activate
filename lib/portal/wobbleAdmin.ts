@@ -1,3 +1,4 @@
+import { emailsByUserId } from "@/lib/portal/findAuthUser";
 import { getSupabaseServer } from "@/lib/supabaseServer";
 import { AccountError, inviteAccountMember } from "@/lib/portal/account";
 import { emailsMatch, normalizeEmail } from "@/lib/portal/licenceMath";
@@ -52,15 +53,7 @@ export async function listWobbleOrganisations(): Promise<WobbleOrganisation[]> {
     .eq("role", "customer_admin");
   if (memberError) throw memberError;
 
-  const { data: users, error: userError } = await admin.auth.admin.listUsers({
-    page: 1,
-    perPage: 200,
-  });
-  if (userError) throw userError;
-
-  const emails = new Map(
-    (users.users ?? []).map((user) => [user.id, user.email?.toLowerCase() ?? ""])
-  );
+  const emails = await emailsByUserId((members ?? []).map((member) => member.user_id));
 
   const programmesByOrg = new Map<string, WobbleProgramme[]>();
   for (const campaign of campaigns ?? []) {

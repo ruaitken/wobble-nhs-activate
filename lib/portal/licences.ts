@@ -1,3 +1,4 @@
+import { findAuthUserByEmail } from "@/lib/portal/findAuthUser";
 import { getSupabaseServer } from "@/lib/supabaseServer";
 import { hashInviteToken, newInviteToken } from "@/lib/portal/inviteToken";
 import {
@@ -98,15 +99,12 @@ async function listInvitations(campaignId: string): Promise<LicenceInvitation[]>
 }
 
 async function findAuthUserIdByEmail(email: string) {
-  const admin = getSupabaseServer();
-  const { data, error } = await admin.auth.admin.listUsers({
-    page: 1,
-    perPage: 200,
-  });
-  if (error) return null;
-  return (
-    data.users.find((user) => user.email?.toLowerCase() === email)?.id ?? null
-  );
+  try {
+    const user = await findAuthUserByEmail(email);
+    return user?.id ?? null;
+  } catch {
+    return null;
+  }
 }
 
 async function getClaim(campaignId: string, userId: string) {
