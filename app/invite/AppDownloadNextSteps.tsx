@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import {
   APP_STORE_URL,
   GOOGLE_PLAY_URL,
+  WEB_APP_URL,
   appDownloadCopy,
   signInWithEmailCopy,
 } from "@/lib/portal/appDownloadCopy";
@@ -21,9 +22,17 @@ export function CheckJunkLine() {
 export function DownloadOnDeviceLine() {
   return (
     <>
-      Download the Wobble app on your <Strong>phone or tablet</Strong>, not on a
-      laptop. iPhone: App Store. Android: Google Play. Use only the store for
-      your phone.
+      On a <Strong>phone or tablet</Strong>, download the Wobble app. It works
+      best there. iPhone: App Store. Android: Google Play.
+    </>
+  );
+}
+
+export function WebAppOnComputerLine() {
+  return (
+    <>
+      On a <Strong>laptop or computer</Strong>, use the web app. Sign in with
+      the same email and password.
     </>
   );
 }
@@ -40,9 +49,19 @@ export function LogInNotCreateAccountLine() {
 export function AlreadyActivatedLine() {
   return (
     <>
-      Your place is already activated. Open the Wobble app on your{" "}
-      <Strong>phone or tablet</Strong> and tap <Strong>Log in</Strong>.{" "}
-      <Strong>Do not tap Create an account</Strong>.
+      Your place is already activated. On a <Strong>phone or tablet</Strong>,
+      open the Wobble app and tap <Strong>Log in</Strong>.{" "}
+      <Strong>Do not tap Create an account</Strong>. On a{" "}
+      <Strong>laptop or computer</Strong>, open the{" "}
+      <a
+        href={WEB_APP_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-extrabold text-[#25303B] underline"
+      >
+        web app
+      </a>{" "}
+      and sign in with the same email and password.
     </>
   );
 }
@@ -62,31 +81,46 @@ export default function AppDownloadNextSteps({
   return (
     <div className="mt-3 space-y-3 text-base text-[#25303B]/80">
       <p>{pending ? appDownloadCopy.pendingLead : appDownloadCopy.accountReadyLead}</p>
-      <ol className="list-decimal space-y-3 pl-5">
-        <li>
+      <p>{signInWithEmailCopy(email)}</p>
+      <div className="space-y-2">
+        <p className="font-extrabold text-[#25303B]">On a phone or tablet</p>
+        <p>
           <DownloadOnDeviceLine />
-        </li>
-        <li>
+        </p>
+        <p>
           <LogInNotCreateAccountLine />
-        </li>
-        <li>{signInWithEmailCopy(email)}</li>
-      </ol>
-      <div className="flex flex-col gap-2 pt-1 sm:flex-row">
+        </p>
+        <div className="flex flex-col gap-2 pt-1 sm:flex-row">
+          <a
+            href={APP_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={storeButtonClass}
+          >
+            Download on the App Store
+          </a>
+          <a
+            href={GOOGLE_PLAY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={storeButtonSecondaryClass}
+          >
+            Get it on Google Play
+          </a>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <p className="font-extrabold text-[#25303B]">On a laptop or computer</p>
+        <p>
+          <WebAppOnComputerLine />
+        </p>
         <a
-          href={APP_STORE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={storeButtonClass}
-        >
-          Download on the App Store
-        </a>
-        <a
-          href={GOOGLE_PLAY_URL}
+          href={WEB_APP_URL}
           target="_blank"
           rel="noopener noreferrer"
           className={storeButtonSecondaryClass}
         >
-          Get it on Google Play
+          Open the web app
         </a>
       </div>
     </div>

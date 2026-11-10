@@ -2,6 +2,7 @@ import { requestOrigin } from "@/lib/supabase/route";
 import {
   APP_STORE_URL,
   GOOGLE_PLAY_URL,
+  WEB_APP_URL,
   appDownloadCopy,
   signInWithEmailCopy,
 } from "@/lib/portal/appDownloadCopy";
@@ -69,12 +70,16 @@ export function buildInviteEmail({
     appDownloadCopy.checkJunk,
     activateUrl,
     "",
-    "2. Download the Wobble app on your phone or tablet",
+    "2. On a phone or tablet, use the app",
     appDownloadCopy.downloadOnDevice,
     `App Store: ${APP_STORE_URL}`,
     `Google Play: ${GOOGLE_PLAY_URL}`,
     "",
-    "3. Tap Log in. Do not tap Create an account",
+    "On a laptop or computer, use the web app",
+    appDownloadCopy.webAppOnComputer,
+    WEB_APP_URL,
+    "",
+    "3. In the app, tap Log in. Do not tap Create an account",
     appDownloadCopy.logInNotCreateAccount,
     signInWithEmailCopy(),
     "",
@@ -89,7 +94,7 @@ export function buildInviteEmail({
 <html lang="en">
   <body style="margin:0;padding:0;background:#A6D5CE;">
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
-      Activate your place, then download the app. Your link expires in 14 days.
+      Activate your place. Use the app on a phone or tablet, or the web app on a computer. Your link expires in 14 days.
     </div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#A6D5CE;">
       <tr>
@@ -122,14 +127,19 @@ export function buildInviteEmail({
                   This link expires in 14 days. ${appDownloadCopy.checkJunkHtml} If the button does not work, copy this address:<br />
                   <a href="${safeActivateUrl}" style="color:#25303B;word-break:break-all;">${safeActivateUrl}</a>
                 </p>
-                <p style="margin:0 0 8px;font-size:16px;font-weight:700;">Then download the app on your phone or tablet</p>
+                <p style="margin:0 0 8px;font-size:16px;font-weight:700;">On a phone or tablet, use the app</p>
                 <p style="margin:0 0 20px;font-size:17px;line-height:1.6;">
                   ${appDownloadCopy.downloadOnDeviceHtml}<br /><br />
                   <a href="${APP_STORE_URL}" style="color:#25303B;font-weight:700;">App Store</a>
                   &nbsp;&nbsp;·&nbsp;&nbsp;
                   <a href="${GOOGLE_PLAY_URL}" style="color:#25303B;font-weight:700;">Google Play</a>
                 </p>
-                <p style="margin:0 0 8px;font-size:16px;font-weight:700;">Tap Log in. Do not tap Create an account</p>
+                <p style="margin:0 0 8px;font-size:16px;font-weight:700;">On a laptop or computer, use the web app</p>
+                <p style="margin:0 0 20px;font-size:17px;line-height:1.6;">
+                  ${appDownloadCopy.webAppOnComputerHtml}<br /><br />
+                  <a href="${WEB_APP_URL}" style="color:#25303B;font-weight:700;">Open the web app</a>
+                </p>
+                <p style="margin:0 0 8px;font-size:16px;font-weight:700;">In the app, tap Log in. Do not tap Create an account</p>
                 <p style="margin:0 0 24px;font-size:17px;line-height:1.6;">
                   ${appDownloadCopy.logInNotCreateAccountHtml} ${escapeHtml(signInWithEmailCopy())}
                 </p>

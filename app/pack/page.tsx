@@ -6,12 +6,14 @@ import { Montserrat } from "next/font/google";
 import {
   APP_STORE_URL,
   GOOGLE_PLAY_URL,
+  WEB_APP_URL,
   signInWithEmailCopy,
 } from "@/lib/portal/appDownloadCopy";
 import {
   CheckJunkLine,
   DownloadOnDeviceLine,
   LogInNotCreateAccountLine,
+  WebAppOnComputerLine,
 } from "@/app/invite/AppDownloadNextSteps";
 
 const montserrat = Montserrat({
@@ -58,7 +60,7 @@ export default function InformationPackPage() {
             </p>
           </div>
           <div>
-            <h2 className="text-base font-extrabold">2. Download the Wobble app on a phone or tablet</h2>
+            <h2 className="text-base font-extrabold">2. On a phone or tablet, use the app</h2>
             <p className="mt-2 text-base text-[#25303B]/80">
               <DownloadOnDeviceLine />
             </p>
@@ -80,6 +82,18 @@ export default function InformationPackPage() {
                 Get it on Google Play
               </a>
             </div>
+            <h2 className="mt-5 text-base font-extrabold">On a laptop or computer, use the web app</h2>
+            <p className="mt-2 text-base text-[#25303B]/80">
+              <WebAppOnComputerLine />
+            </p>
+            <a
+              href={WEB_APP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center justify-center rounded-xl border border-black/10 bg-white/60 px-4 py-3 text-base font-extrabold"
+            >
+              Open the web app
+            </a>
           </div>
           <div>
             <h2 className="text-base font-extrabold">

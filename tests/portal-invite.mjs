@@ -235,6 +235,9 @@ test("after activate, patients are told to log in on a phone or tablet", () => {
   assert.ok(copy.includes("Do not tap Create an account"));
   assert.ok(copy.includes("junk or spam"));
   assert.ok(copy.includes("phone or tablet"));
-  assert.ok(pack.includes("appDownloadCopy"));
+  assert.ok(copy.includes("laptop or computer"));
+  assert.ok(copy.includes("https://app.wobblebalance.com/"));
+  assert.ok(pack.includes("WEB_APP_URL"));
+  assert.ok(email.includes("WEB_APP_URL"));
   assert.ok(email.includes("appDownloadCopy"));
 });
