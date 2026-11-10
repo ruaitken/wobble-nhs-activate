@@ -90,7 +90,7 @@ export default function InformationPackPage() {
               href={WEB_APP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 inline-flex items-center justify-center rounded-xl border border-black/10 bg-white/60 px-4 py-3 text-base font-extrabold"
+              className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-black/10 bg-white/60 px-4 py-3 text-base font-extrabold"
             >
               Open the web app
             </a>

@@ -118,7 +118,7 @@ export default function AppDownloadNextSteps({
           href={WEB_APP_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className={storeButtonSecondaryClass}
+          className={`${storeButtonSecondaryClass} w-full`}
         >
           Open the web app
         </a>
